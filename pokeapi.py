@@ -4,10 +4,10 @@ import os
 import sqlite3
 import random 
 
-def get_move_data():
+def get_move_data(data_limit):
     move_list = []
     move_data = []
-    while len(move_list) <= 24:
+    while len(move_list) < data_limit:
     ## there are a total of 826 moves in pokemon
         random_num = random.randint(1,826)
         if random_num not in move_list:
@@ -18,10 +18,11 @@ def get_move_data():
             id = random_num
             accuracy = content["accuracy"]
             name = content["name"].split("--")[0]
-            move_data.append((id, name, accuracy))
+            type = content["type"]["name"]
+            move_data.append((id, name, type, accuracy))
 
     print(move_list)
     print(len(move_list))
     print(move_data)
 
-get_move_data()
+get_move_data(25)
