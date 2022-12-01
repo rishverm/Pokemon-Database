@@ -4,25 +4,26 @@ import os
 import sqlite3
 import random 
 
-def get_move_data(data_limit):
-    move_list = []
-    move_data = []
-    while len(move_list) < data_limit:
-    ## there are a total of 826 moves in pokemon
-        random_num = random.randint(1,826)
-        if random_num not in move_list:
-            move_list.append(random_num)
-            url = "https://pokeapi.co/api/v2/move/" + str(random_num) + "/"
+def get_pokemon_move_data(data_limit):
+    pokemon_move_list = []
+    pokemon_move_data = []
+    while len(pokemon_move_list) < data_limit:
+    ## there are a total of 905 pokemon in the pokeapi database
+        random_num = random.randint(1,905)
+        if random_num not in pokemon_move_list:
+            pokemon_move_list.append(random_num)
+            url = "https://pokeapi.co/api/v2/pokemon/" + str(random_num) + "/"
             r = requests.get(url)
             content = json.loads(r.text)
             id = random_num
-            accuracy = content["accuracy"]
-            name = content["name"].split("--")[0]
-            type = content["type"]["name"]
-            move_data.append((id, name, type, accuracy))
+            name = content["forms"][0]["name"]
+            moves = []
+            for move in content["moves"]:
+                moves.append(move["move"]["name"])
+            pokemon_move_data.append((id, name, moves))
 
-    print(move_list)
-    print(len(move_list))
-    print(move_data)
+    print(pokemon_move_list)
+    print(len(pokemon_move_list))
+    print(pokemon_move_data)
 
-get_move_data(25)
+get_pokemon_move_data(25)
