@@ -4,7 +4,7 @@ import os
 import sqlite3
 import random 
 
-def get_pokemon_move_data(data_limit):
+def get_pokemon_move_data(data_limit=25):
     if data_limit > 905:
         print("Too much data requested, please reduce data requested and run again")
         return(None)
@@ -28,7 +28,7 @@ def get_pokemon_move_data(data_limit):
     return pokemon_move_data
 
     
-def get_abilities_data(data_limit):
+def get_abilities_data(data_limit=25):
     if data_limit > 267:
         print("Too much data requested, please reduce data requested and run again")
         return(None)
@@ -38,7 +38,6 @@ def get_abilities_data(data_limit):
         while len(abilities_tracker_lst) < data_limit:
         ## there are a total of 267 abilities in the pokeapi database
             random_num = random.randint(1,267)
-            print(random_num)
             if random_num not in abilities_tracker_lst:
                 abilities_tracker_lst.append(random_num)
                 url = "https://pokeapi.co/api/v2/ability/" + str(random_num) + "/"
