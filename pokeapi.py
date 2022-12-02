@@ -48,13 +48,16 @@ def get_abilities_data(data_limit):
                 pokemon_lst = []
                 for pokemon in content["pokemon"]:
                     pokemon_lst.append(pokemon["pokemon"]["name"])
-                abilities_data.append((name, pokemon_lst))
+                rarity = len(pokemon_lst)
+                abilities_data.append((name, rarity, pokemon_lst))
     
     return abilities_data
 
 
-print(get_pokemon_move_data(25))
-print(get_abilities_data(5))
+#print(get_pokemon_move_data(25))
+for x in range(5):
+    print(get_abilities_data(1))
+    print("--------------------------------------------------")
 
 
 
