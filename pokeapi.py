@@ -19,43 +19,42 @@ def get_pokemon_move_data(data_limit):
                 url = "https://pokeapi.co/api/v2/pokemon/" + str(random_num) + "/"
                 r = requests.get(url)
                 content = json.loads(r.text)
-                poke_id = random_num
                 name = content["forms"][0]["name"]
                 moves = []
                 for move in content["moves"]:
                     moves.append(move["move"]["name"])
-                pokemon_move_data.append((poke_id, name, moves))
+                pokemon_move_data.append((name, moves))
 
     return pokemon_move_data
 
     
-def get_habitat_data(data_limit):
-    if data_limit > 9:
+def get_abilities_data(data_limit):
+    if data_limit > 267:
         print("Too much data requested, please reduce data requested and run again")
         return(None)
     else:
-        habitat_list = []
-        habitat_data = []
-        while len(habitat_list) < data_limit:
-        ## there are a total of 9 habitats in the pokeapi database
-            random_num = random.randint(1,9)
-            if random_num not in habitat_list:
-                habitat_list.append(random_num)
-                url = "https://pokeapi.co/api/v2/pokemon-habitat/" + str(random_num) + "/"
+        abilities_tracker_lst = []
+        abilities_data = []
+        while len(abilities_tracker_lst) < data_limit:
+        ## there are a total of 267 abilities in the pokeapi database
+            random_num = random.randint(1,267)
+            print(random_num)
+            if random_num not in abilities_tracker_lst:
+                abilities_tracker_lst.append(random_num)
+                url = "https://pokeapi.co/api/v2/ability/" + str(random_num) + "/"
                 r = requests.get(url)
                 content = json.loads(r.text)
-                habitat_id = random_num
                 name = content["name"]
                 pokemon_lst = []
-                for pokemon in content["pokemon_species"]:
-                    pokemon_lst.append(pokemon["name"])
-                habitat_data.append((habitat_id, name, pokemon_lst))
+                for pokemon in content["pokemon"]:
+                    pokemon_lst.append(pokemon["pokemon"]["name"])
+                abilities_data.append((name, pokemon_lst))
     
-    return habitat_data
+    return abilities_data
 
 
-get_pokemon_move_data(25)
-get_habitat_data(5)
+print(get_pokemon_move_data(25))
+print(get_abilities_data(5))
 
 
 
