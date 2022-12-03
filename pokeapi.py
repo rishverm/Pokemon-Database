@@ -4,7 +4,7 @@ import os
 import sqlite3
 import random 
 
-def get_pokemon_move_data(data_limit=25):
+def get_pokemon_pokeapi_data(data_limit=25):
     if data_limit > 905:
         print("Too much data requested, please reduce data requested and run again")
         return(None)
@@ -21,9 +21,12 @@ def get_pokemon_move_data(data_limit=25):
                 content = json.loads(r.text)
                 name = content["forms"][0]["name"]
                 moves = []
+                abilities = []
                 for move in content["moves"]:
                     moves.append(move["move"]["name"])
-                pokemon_move_data.append((name, moves))
+                for ability in content["abilities"]:
+                    abilities.append(ability["ability"]["name"])
+                pokemon_move_data.append((name, moves, abilities))
 
     return pokemon_move_data
 
@@ -48,14 +51,14 @@ def get_abilities_data(data_limit=25):
                 for pokemon in content["pokemon"]:
                     pokemon_lst.append(pokemon["pokemon"]["name"])
                 rarity = len(pokemon_lst)
-                abilities_data.append((name, rarity, pokemon_lst))
+                abilities_data.append((name, rarity))
     
     return abilities_data
 
 
 #print(get_pokemon_move_data(25))
-for x in range(5):
-    print(get_abilities_data(1))
+for x in range(1):
+    print(get_pokemon_pokeapi_data(2))
     print("--------------------------------------------------")
 
 
