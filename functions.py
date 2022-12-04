@@ -227,7 +227,7 @@ class Pokemon:
             power_lst.append(tup[1])
 
         plt.figure()
-        plt.scatter(x=accuracy_lst,y=power_lst,alpha=0.3)
+        plt.scatter(x=accuracy_lst,y=power_lst,alpha=0.3,edgecolors='black')
 
         plt.title("Move Accuracy to Power Comparison")
         plt.xlabel("Accuracy")
@@ -236,6 +236,55 @@ class Pokemon:
         plt.show()
 
         return "Move Power to Accuracy Comparison Graph has finished"
+
+
+    #add documnetation here
+    #change code so that each type has a different color for their overallstr points
+    def visualization_movetype_str_data1(self, cur, conn):
+        cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
+        move_info_lst = cur.fetchall()
+        overallstr_lst = []
+        type_lst = []
+        for tup in move_info_lst:
+            type_lst.append(tup[1])
+            overallstr_lst.append(tup[0])
+
+        plt.figure()
+        plt.scatter(x=type_lst,y=overallstr_lst,alpha=0.5,edgecolors='black') 
+
+        plt.title("Move Type Overall Strength")
+        plt.xlabel("Move Type")
+        plt.ylabel("Overall Strength")
+
+        plt.xticks(rotation=30)
+        plt.tight_layout()
+
+        plt.show()
+
+        return "Move Type Overall Strength Graph has finished"
+
+
+    # add documentation here
+
+    # def visualization_movetype_str_data2(self, cur, conn):
+    #     cur.execute("SELECT Accuracy, Power FROM Moves")
+    #     move_info_lst = cur.fetchall()
+    #     accuracy_lst = []
+    #     power_lst = []
+    #     for tup in move_info_lst:
+    #         accuracy_lst.append(tup[0])
+    #         power_lst.append(tup[1])
+
+    #     plt.figure()
+    #     plt.bar(x=accuracy_lst,y=power_lst,alpha=0.3,edgecolors='black')
+
+    #     plt.title("Average Move Type Overall Strength")
+    #     plt.xlabel("Move Type")
+    #     plt.ylabel("Overall Strength")
+
+    #     plt.show()
+
+    #     return "Average Move Type Overall Strength Graph has finished"
 
 def main():
     conn = sqlite3.connect('PokeDatabase')
@@ -262,6 +311,7 @@ def main():
     print("Pokemon table has finished")
     movevisual=server.visualization_move_data(cur, conn)
     print(movevisual)
-
+    movetypevisual1=server.visualization_movetype_str_data1(cur, conn)
+    print(movetypevisual1)
 
 main()
