@@ -250,7 +250,7 @@ class Pokemon:
             overallstr_lst.append(tup[0])
 
         plt.figure()
-        plt.scatter(x=type_lst,y=overallstr_lst,alpha=0.5,edgecolors='black') 
+        plt.scatter(x=type_lst,y=overallstr_lst,alpha=0.3,edgecolors='black') 
 
         plt.title("Move Type Overall Strength")
         plt.xlabel("Move Type")
