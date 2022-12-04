@@ -5,6 +5,7 @@ import random
 from bs4 import BeautifulSoup
 import requests
 import unicodedata
+import matplotlib.pyplot as plt
 
 
 class Pokemon:
@@ -19,7 +20,7 @@ class Pokemon:
     # initializes database and tables
     def createStructure(self,cur,conn):
         cur.execute("CREATE TABLE IF NOT EXISTS Pokemon (PokemonID INTEGER PRIMARY KEY, TypeID INTEGER, AbilityIDs CHAR, MoveIDs CHAR, PokemonName STRING UNIQUE)")
-        cur.execute("CREATE TABLE IF NOT EXISTS Moves (MoveID INTEGER PRIMARY KEY, TypeID INTEGER, MoveName STRING UNIQUE, Accuracy FLOAT, Power INTEGER, Strength FLOAT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS Moves (MoveID INTEGER PRIMARY KEY, TypeID INTEGER, MoveName STRING UNIQUE, Accuracy FLOAT, Power INTEGER, OverallStrength FLOAT)")
         cur.execute("CREATE TABLE IF NOT EXISTS Type (TypeID INTEGER PRIMARY KEY, TypeName STRING UNIQUE)")
         cur.execute("CREATE TABLE IF NOT EXISTS Ability (AbilityID INTEGER PRIMARY KEY, AbilityName STRING UNIQUE)")
         conn.commit()
@@ -154,7 +155,7 @@ class Pokemon:
             cur.execute("Select * from Type")
             for row in cur:
                 if row[1]==type:
-                    cur.execute("INSERT OR IGNORE INTO Moves (TypeID,MoveName,Accuracy,Power,Strength) VALUES (?,?,?,?,?)",(int(row[0]),name,accuracy,power,strength))
+                    cur.execute("INSERT OR IGNORE INTO Moves (TypeID,MoveName,Accuracy,Power,OverallStrength) VALUES (?,?,?,?,?)",(int(row[0]),name,accuracy,power,strength))
                     break
         conn.commit()
 
@@ -203,6 +204,39 @@ class Pokemon:
                 continue
         conn.commit()
 
+    #creates file ADD MORE HERE WHEN YOU ARE DONE
+    # TALK ABOUT WHAT THE FUNCTION DOES HERE
+    # ...............
+
+    def calculations_file(self,):
+        pass
+    #You must select some data from all of the tables in your database and calculate
+    #something from that data (20 points). You could calculate the count of how many items
+     #occur on a particular day of the week or the average of the number of items per day.
+     #● You must do at least one database join to select your data (20 points).
+     #● Write out the calculated data to a file as text (10 points) 
+
+    # add documentation here too
+    def visualization_move_data(self, cur, conn):
+        cur.execute("SELECT Accuracy, Power FROM Moves")
+        move_info_lst = cur.fetchall()
+        accuracy_lst = []
+        power_lst = []
+        for tup in move_info_lst:
+            accuracy_lst.append(tup[0])
+            power_lst.append(tup[1])
+
+        plt.figure()
+        plt.scatter(x=accuracy_lst,y=power_lst,alpha=0.3)
+
+        plt.title("Move Accuracy to Power Comparison")
+        plt.xlabel("Accuracy")
+        plt.ylabel("Power")
+
+        plt.show()
+
+        return "Move Power to Accuracy Comparison Graph has finished"
+
 def main():
     conn = sqlite3.connect('PokeDatabase')
     cur=conn.cursor()
@@ -226,6 +260,8 @@ def main():
     print("Ability table has finished")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
     print("Pokemon table has finished")
+    movevisual=server.visualization_move_data(cur, conn)
+    print(movevisual)
 
 
 main()
