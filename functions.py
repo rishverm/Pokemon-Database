@@ -244,12 +244,24 @@ class Pokemon:
             accuracy_lst.append(tup[0])
             power_lst.append(tup[1])
 
-        plt.figure()
+        fig, ax = plt.subplots()
+
         plt.scatter(x=accuracy_lst,y=power_lst,alpha=0.3,edgecolors='black')
 
-        plt.title("Move Accuracy to Power Comparison")
-        plt.xlabel("Accuracy")
-        plt.ylabel("Power")
+        plt.title("Move Accuracy to Power Comparison", pad=15, weight="bold", color='#333333')
+        plt.xlabel("Accuracy", labelpad=15, color='#333333')
+        plt.ylabel("Power", labelpad=15, color='#333333')
+
+        ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#DDDDDD')
+        ax.tick_params(bottom=False, left=False)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(True, color='#EEEEEE')
+        ax.xaxis.grid(True, color='#EEEEEE')
+        plt.tight_layout()
 
         plt.show()
 
@@ -309,71 +321,104 @@ class Pokemon:
 
         plt.scatter(x=type_lst,y=overallstr_lst,alpha=0.5,c=color_lst,edgecolors='black')
 
-        plt.title("Move Type Overall Strength")
-        plt.xlabel("Move Type")
-        plt.ylabel("Overall Strength")
+        plt.title("Move Type Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.xlabel("Move Type", labelpad=15, color='#333333')
+        plt.ylabel("Overall Strength", labelpad=15, color='#333333')
 
-        plt.xticks(rotation=30)
         plt.tight_layout()
 
         plt.show()
 
-        return "Move Type Overall Strength Graph has finished"
+        return "Move Type Overall Strength Graph (1) has finished"
 
 
     # add documentation here
 
-    # def visualization_movetype_str_data2(self, cur, conn):
-    #     cur.execute("SELECT Accuracy, Power FROM Moves")
-    #     move_info_lst = cur.fetchall()
-    #     accuracy_lst = []
-    #     power_lst = []
-    #     for tup in move_info_lst:
-    #         accuracy_lst.append(tup[0])
-    #         power_lst.append(tup[1])
-
-    #     plt.figure()
-    #     plt.bar(x=accuracy_lst,y=power_lst,alpha=0.3,edgecolors='black')
-
-    #     plt.title("Average Move Type Overall Strength")
-    #     plt.xlabel("Move Type")
-    #     plt.ylabel("Overall Strength")
-
-    #     plt.show()
-
-    #     return "Average Move Type Overall Strength Graph has finished"
-
-    #     cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
-    #     move_info_lst = cur.fetchall()
-    #     overallstr_dict = {}
-    #     type_lst = []
-    #     for tup in move_info_lst:
-    #         type_lst.append(tup[1])
-    #         if tup[1] not in overallstr_dict:
-    #             overallstr_dict[tup[1]] = [tup[0]]
-    #         else:
-    #             overallstr_dict[tup[1]].append(tup[0])
-
-    #     print(type_lst)
-    #     print(overallstr_dict)
-    #     plt.figure()
-
-    #     colors = {'Normal':'gray', 'Fire':'orange', 'Dark':'black', 'Bug':'green', 'Grass':'green','Psychic':'pink','Ground':'brown','Water':'blue','Steel':'gray',
-    #     'Electric':'yellow','Fighting':'brown','Dragon':'purple','Fairy':'pink','Flying':'white','Ice':'white','Poison':'purple','Rock':'brown'}
+    def visualization_movetype_str_data2(self, cur, conn):
+        cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
+        move_info_lst = cur.fetchall()
+        combined_dict = {}
+        for tup in move_info_lst:
+            if tup[1] not in combined_dict:
+                combined_dict[tup[1]] = [tup[0]]
+            else:
+                combined_dict[tup[1]].append(tup[0])
         
-    #     for type, str_dict in overallstr_dict.items():
-    #         plt.scatter(x=type,y=str_dict,alpha=0.3,c=colors[type],edgecolors='black') 
+        avg_lst = []
+        for value in combined_dict.values():
+            avg_lst.append(sum(value)/len(value))
 
-    #     plt.title("Move Type Overall Strength")
-    #     plt.xlabel("Move Type")
-    #     plt.ylabel("Overall Strength")
+        types = list(combined_dict.keys())
+        # change colors to be diff colors for all of the graphs so that red and red not same yeye
+        color_lst = []
+        for key in combined_dict.keys():
+            if key == "Normal":
+                color_lst.append("gray")
+            elif key == "Fire":
+                color_lst.append("red")
+            elif key == "Dark":
+                  color_lst.append("black")
+            elif key == "Bug":
+                color_lst.append("green")
+            elif key == "Grass":
+                color_lst.append("green")
+            elif key == "Psychic":
+                color_lst.append("pink")
+            elif key == "Ground":
+                color_lst.append("brown")
+            elif key == "Water":
+                color_lst.append("blue")
+            elif key == "Steel":
+                color_lst.append("gray")
+            elif key == "Electric":
+                color_lst.append("yellow")
+            elif key == "Fighting":
+                color_lst.append("red")
+            elif key == "Dragon":
+                color_lst.append("purple")
+            elif key == "Fairy":
+                color_lst.append("pink")
+            elif key == "Flying":
+                color_lst.append("white")
+            elif key == "Ice":
+                color_lst.append("white")
+            elif key == "Poison":
+                color_lst.append("purple")
+            else:
+                color_lst.append("brown")
+        
+        fig, ax = plt.subplots()
 
-    #     plt.xticks(rotation=30)
-    #     plt.tight_layout()
+        bars = plt.bar(types,avg_lst,edgecolor='black',color=color_lst)
 
-    #     plt.show()
+        plt.title("Average Move Type Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.xlabel("Move Type", labelpad=15, color='#333333')
+        plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
+        
+        ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#DDDDDD')
+        ax.tick_params(bottom=False, left=False)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(True, color='#827E7E')
+        ax.xaxis.grid(False)
 
-    #     return "Move Type Overall Strength Graph has finished"
+        for bar in bars:
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.5,
+                round(bar.get_height(), 1),
+                horizontalalignment='center',
+                color="#4B3F3F",
+                weight='bold')
+
+        plt.tight_layout()
+
+        plt.show()
+
+        return "Move Type Overall Strength Graph (2) has finished"
 
 def main():
     conn = sqlite3.connect('PokeDatabase.db')
@@ -402,5 +447,9 @@ def main():
     print(movevisual)
     movetypevisual1=server.visualization_movetype_str_data1(cur, conn)
     print(movetypevisual1)
+    movetypevisual2=server.visualization_movetype_str_data2(cur, conn)
+    print(movetypevisual2)
+
+
 
 main()
