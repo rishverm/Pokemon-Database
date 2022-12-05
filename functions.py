@@ -215,6 +215,8 @@ class Pokemon:
                         break
                 moveIDs=','.join(moveIDs)
                 abilityIDs=','.join(abilityIDs)
+                if len(moveIDs)==0:
+                    continue
                 cur.execute("INSERT OR IGNORE INTO Pokemon (TypeID,AbilityIDs,MoveIDs,PokemonName) VALUES (?,?,?,?)",(typeID,abilityIDs,moveIDs,name))
             except:
                 continue
