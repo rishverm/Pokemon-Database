@@ -47,19 +47,33 @@ class Pokemon:
     # requires pokemonDiction returned from getPokemonNameTypes
     # returns a dictionary where the key is pokemon and value are their list of moves
     # {pokemon1: [move1,move2,move3], pokemon2: [move1,move2,move3,move4], pokemon3:[move1,move2,move3,move4]}
-    def getPokemonMoves(self,pokemonDiction):
+    def getPokemonMoves(self,cur,conn,pokemonDiction):
         pokemonNames= list(pokemonDiction.keys())
         returnedPokemonMoveDiction={}
         for pokemon in pokemonNames:
+            iter=0
             url= "https://pokeapi.co/api/v2/pokemon/" + pokemon.lower() + "/"
             r=requests.get(url)
             if r.ok:
                 diction=json.loads(r.text)
                 movelist=[]
                 for move in diction['moves']:
-                    movelist.append(move['move']['name'])
-                random.shuffle(movelist)
-                returnedPokemonMoveDiction[pokemon]=movelist[0:15]
+                    moveurl= "https://pokeapi.co/api/v2/move/" + move['move']['name'].lower() + "/"
+                    re=requests.get(moveurl)
+                    moveDict=json.loads(re.text)
+                    cur.execute("Select MoveName from Moves")
+                    notInTable=True
+                    for row in cur:
+                        if row[0]==move['move']['name']:
+                            notInTable=False
+                            break
+                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 15: 
+                        if notInTable:
+                            iter+=1
+                        movelist.append(move['move']['name'])
+                    elif iter >= 15:
+                        break
+                returnedPokemonMoveDiction[pokemon]=movelist
                 
         return returnedPokemonMoveDiction
 
@@ -211,7 +225,7 @@ def main():
     print("Create structure has finished")
     pokemonDiction= server.getPokemonNameTypes(25)
     print("Pokemon Name Types has finished")
-    pokemonMoveDiction=server.getPokemonMoves(pokemonDiction)
+    pokemonMoveDiction=server.getPokemonMoves(cur,conn,pokemonDiction)
     print("Pokemon moves has finished")
     pokemonAbilityDiction=server.getPokemonAbilities(pokemonDiction)
     print("Pokemon Abilities has finished")
