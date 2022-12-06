@@ -62,19 +62,14 @@ class Pokemon:
                 movelist=[]
                 for move in diction['moves']:
                     moveurl= "https://pokeapi.co/api/v2/move/" + move['move']['name'].lower() + "/"
+                    moveurl= moveurl.replace(' ','-')
                     re=requests.get(moveurl)
                     moveDict=json.loads(re.text)
                     cur.execute("Select MoveName from Moves")
-                    notInTable=True
-                    for row in cur:
-                        if row[0]==move['move']['name']:
-                            notInTable=False
-                            break
-                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 15: 
-                        if notInTable:
-                            iter+=1
+                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 9: 
+                        iter+=1
                         movelist.append(move['move']['name'])
-                    elif iter >= 15:
+                    elif iter >= 9:
                         break
                 returnedPokemonMoveDiction[pokemon]=movelist
                 
@@ -124,7 +119,14 @@ class Pokemon:
         for moveList in pokemonMoves:
             for move in moveList:
                 if move not in returnedMNAPDiction:
-                    r= requests.get('https://bulbapedia.bulbagarden.net/wiki/' + move + "_(move)")
+                    movement= move.split('-')
+                    mod=[]
+                    for mov in movement:
+                        mov=mov.capitalize()
+                        mod.append(mov)
+                    mod='_'.join(mod)
+                    url= 'https://bulbapedia.bulbagarden.net/wiki/' + mod + "_(move)"
+                    r= requests.get(url)
                     if r.ok:
                         soup= BeautifulSoup(r.content, 'html.parser')
                         tags= soup.find_all('td')
@@ -215,6 +217,8 @@ class Pokemon:
                         break
                 moveIDs=','.join(moveIDs)
                 abilityIDs=','.join(abilityIDs)
+                if len(moveIDs)==0:
+                    continue
                 cur.execute("INSERT OR IGNORE INTO Pokemon (TypeID,AbilityIDs,MoveIDs,PokemonName) VALUES (?,?,?,?)",(typeID,abilityIDs,moveIDs,name))
             except:
                 continue
