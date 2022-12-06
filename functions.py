@@ -254,6 +254,7 @@ class Pokemon:
         plt.xlabel("Accuracy", labelpad=15, color='#333333')
         plt.ylabel("Power", labelpad=15, color='#333333')
 
+        ## Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -285,39 +286,41 @@ class Pokemon:
         color_lst = []
         for tup in move_info_lst:
             if tup[1] == "Normal":
-                color_lst.append("gray")
+                color_lst.append("#A8A77A")
             elif tup[1] == "Fire":
-                color_lst.append("red")
+                color_lst.append("#EE8130")
             elif tup[1] == "Dark":
-                  color_lst.append("black")
+                  color_lst.append("#705746")
             elif tup[1] == "Bug":
-                color_lst.append("green")
+                color_lst.append("#A6B91A")
             elif tup[1] == "Grass":
-                color_lst.append("green")
+                color_lst.append("#7AC74C")
             elif tup[1] == "Psychic":
-                color_lst.append("pink")
+                color_lst.append("#F95587")
             elif tup[1] == "Ground":
-                color_lst.append("brown")
+                color_lst.append("#E2BF65")
             elif tup[1] == "Water":
-                color_lst.append("blue")
+                color_lst.append("#6390F0")
             elif tup[1] == "Steel":
-                color_lst.append("gray")
+                color_lst.append("#B7B7CE")
             elif tup[1] == "Electric":
-                color_lst.append("yellow")
+                color_lst.append("#F7D02C")
             elif tup[1] == "Fighting":
-                color_lst.append("red")
+                color_lst.append("#C22E28")
             elif tup[1] == "Dragon":
-                color_lst.append("purple")
+                color_lst.append("#6F35FC")
             elif tup[1] == "Fairy":
-                color_lst.append("pink")
+                color_lst.append("#D685AD")
             elif tup[1] == "Flying":
-                color_lst.append("white")
+                color_lst.append("#A98FF3")
             elif tup[1] == "Ice":
-                color_lst.append("white")
+                color_lst.append("#96D9D6")
             elif tup[1] == "Poison":
-                color_lst.append("purple")
+                color_lst.append("#A33EA1")
+            elif tup[1] == "Ghost":
+                color_lst.append("#735797")
             else:
-                color_lst.append("brown")
+                color_lst.append("#B6A136")
 
         plt.figure()
 
@@ -355,39 +358,41 @@ class Pokemon:
         color_lst = []
         for key in combined_dict.keys():
             if key == "Normal":
-                color_lst.append("gray")
+                color_lst.append("#A8A77A")
             elif key == "Fire":
-                color_lst.append("red")
+                color_lst.append("#EE8130")
             elif key == "Dark":
-                  color_lst.append("black")
+                  color_lst.append("#705746")
             elif key == "Bug":
-                color_lst.append("green")
+                color_lst.append("#A6B91A")
             elif key == "Grass":
-                color_lst.append("green")
+                color_lst.append("#7AC74C")
             elif key == "Psychic":
-                color_lst.append("pink")
+                color_lst.append("#F95587")
             elif key == "Ground":
-                color_lst.append("brown")
+                color_lst.append("#E2BF65")
             elif key == "Water":
-                color_lst.append("blue")
+                color_lst.append("#6390F0")
             elif key == "Steel":
-                color_lst.append("gray")
+                color_lst.append("#B7B7CE")
             elif key == "Electric":
-                color_lst.append("yellow")
+                color_lst.append("#F7D02C")
             elif key == "Fighting":
-                color_lst.append("red")
+                color_lst.append("#C22E28")
             elif key == "Dragon":
-                color_lst.append("purple")
+                color_lst.append("#6F35FC")
             elif key == "Fairy":
-                color_lst.append("pink")
+                color_lst.append("#D685AD")
             elif key == "Flying":
-                color_lst.append("white")
+                color_lst.append("#A98FF3")
             elif key == "Ice":
-                color_lst.append("white")
+                color_lst.append("#96D9D6")
             elif key == "Poison":
-                color_lst.append("purple")
+                color_lst.append("#A33EA1")
+            elif key == "Ghost":
+                color_lst.append("#735797")
             else:
-                color_lst.append("brown")
+                color_lst.append("#B6A136")
         
         fig, ax = plt.subplots()
 
@@ -397,6 +402,7 @@ class Pokemon:
         plt.xlabel("Move Type", labelpad=15, color='#333333')
         plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
         
+        ## Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
