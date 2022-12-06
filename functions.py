@@ -227,9 +227,41 @@ class Pokemon:
     #creates file ADD MORE HERE WHEN YOU ARE DONE
     # TALK ABOUT WHAT THE FUNCTION DOES HERE
     # ...............
+    def pokemonTypeStrCalculator(self, cur, conn):
+            cur.execute("SELECT Pokemon.MoveIDs, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+            poke_type_move_lst = cur.fetchall()
+            conn.commit()
+            cur.execute("SELECT MoveID, OverallStrength FROM Moves")
+            move_str_lst = cur.fetchall()
+            conn.commit()
+            
+            move_str_dict = {}
+            for tup in move_str_lst:
+                move_str_dict[tup[0]] = tup[1]
 
-    def calculations_file(self,):
-        pass
+            type_overallstr_dict = {}
+            for tup in poke_type_move_lst:
+                for item in tup:
+                    if item == tup[0]:
+                        total = 0
+                        for num in item.split(","):
+                            num = int(num)
+                            num = move_str_dict[num]
+                            total += num
+                        if tup[1] not in type_overallstr_dict:
+                            type_overallstr_dict[tup[1]] = [total/len(item.split(","))]
+                        else:
+                            type_overallstr_dict[tup[1]].append(total/len(item.split(",")))
+                            
+            return type_overallstr_dict
+
+    def calculationsFile(self,calculation_dict):
+        f = open("poke.csv", "w")
+        f.write("PokeType,OverallStr" + "\n")
+        for key, value in calculation_dict.items():
+            f.write(key + "," + str(round(sum(value)/len(value), 2)) + "\n")
+        f.close()
+        
     #You must select some data from all of the tables in your database and calculate
     #something from that data (20 points). You could calculate the count of how many items
      #occur on a particular day of the week or the average of the number of items per day.
@@ -237,24 +269,25 @@ class Pokemon:
      #● Write out the calculated data to a file as text (10 points) 
 
     # add documentation here too
-    def visualization_move_data(self, cur, conn):
+    def powerAccuracyVisualization(self, cur, conn):
         cur.execute("SELECT Accuracy, Power FROM Moves")
         move_info_lst = cur.fetchall()
+        conn.commit()
         accuracy_lst = []
         power_lst = []
         for tup in move_info_lst:
             accuracy_lst.append(tup[0])
             power_lst.append(tup[1])
 
-        fig, ax = plt.subplots()
+        fig, ax, = plt.subplots()
 
         plt.scatter(x=accuracy_lst,y=power_lst,alpha=0.3,edgecolors='black')
 
-        plt.title("Move Accuracy to Power Comparison", pad=15, weight="bold", color='#333333')
+        plt.title("Move Accuracy to Move Power", pad=15, weight="bold", color='#333333')
         plt.xlabel("Accuracy", labelpad=15, color='#333333')
         plt.ylabel("Power", labelpad=15, color='#333333')
 
-        ## Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -264,19 +297,28 @@ class Pokemon:
         ax.set_axisbelow(True)
         ax.yaxis.grid(True, color='#EEEEEE')
         ax.xaxis.grid(True, color='#EEEEEE')
+       
+        x = np.array(accuracy_lst)
+        y = np.array(power_lst)
+
+        m, b = np.polyfit(x, y, 1)
+        plt.plot(x, (m*x+b))
+        
+        r = np.corrcoef(x, y)
+        corr_coeff = (r[1, 0])
+
+        plt.text(.03, .96, 'Correlation Coefficent = ' + str(round(corr_coeff,2)), ha='left', va='top', transform=ax.transAxes, weight='semibold')
+
         plt.tight_layout()
 
         plt.show()
 
-        return "Move Power to Accuracy Comparison Graph has finished"
-
-
     #add documnetation here
     #change code so that each type has a different color for their overallstr points
-    def visualization_movetype_str_data1(self, cur, conn):
+    def moveTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         move_info_lst = cur.fetchall()
-        overallstr_dict = {}
+        conn.commit()
         type_lst = []
         overallstr_lst = []
         for tup in move_info_lst:
@@ -322,26 +364,35 @@ class Pokemon:
             else:
                 color_lst.append("#B6A136")
 
-        plt.figure()
+        fig, ax, = plt.subplots()
 
         plt.scatter(x=type_lst,y=overallstr_lst,alpha=0.5,c=color_lst,edgecolors='black')
 
-        plt.title("Move Type Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.title("Move Type to Overall Strength", pad=15, weight="bold", color='#333333')
         plt.xlabel("Move Type", labelpad=15, color='#333333')
         plt.ylabel("Overall Strength", labelpad=15, color='#333333')
+
+        # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#DDDDDD')
+        ax.tick_params(bottom=False, left=False)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(False)
+        ax.xaxis.grid(True, color='#EEEEEE')
 
         plt.tight_layout()
 
         plt.show()
 
-        return "Move Type Overall Strength Graph (1) has finished"
-
-
     # add documentation here
 
-    def visualization_movetype_str_data2(self, cur, conn):
+    def moveTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         move_info_lst = cur.fetchall()
+        conn.commit()
         combined_dict = {}
         for tup in move_info_lst:
             if tup[1] not in combined_dict:
@@ -354,7 +405,7 @@ class Pokemon:
             avg_lst.append(sum(value)/len(value))
 
         types = list(combined_dict.keys())
-        # change colors to be diff colors for all of the graphs so that red and red not same yeye
+
         color_lst = []
         for key in combined_dict.keys():
             if key == "Normal":
@@ -398,7 +449,7 @@ class Pokemon:
 
         bars = plt.bar(types,avg_lst,edgecolor='black',color=color_lst)
 
-        plt.title("Average Move Type Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.title("Average Move Type to Overall Strength", pad=15, weight="bold", color='#333333')
         plt.xlabel("Move Type", labelpad=15, color='#333333')
         plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
         
@@ -426,8 +477,89 @@ class Pokemon:
 
         plt.show()
 
-        return "Move Type Overall Strength Graph (2) has finished"
+# add documentation 
+    def pokemonTypeStrVisualization1(self,calculation_dict):
+        pass
+            #for key, value in type_overallstr_dict.items():
+            # type_overallstr_dict[key] = (round(sum(value)/len(value), 2))
+    
 
+# add documentation
+    def pokemonTypeStrVisualization2(self,calculation_dict):
+        for key, value in calculation_dict.items():
+               calculation_dict[key] = (round(sum(value)/len(value), 2))
+    
+        color_lst = []
+        for key in calculation_dict.keys():
+            if key == "Normal":
+                color_lst.append("#A8A77A")
+            elif key == "Fire":
+                color_lst.append("#EE8130")
+            elif key == "Dark":
+                  color_lst.append("#705746")
+            elif key == "Bug":
+                color_lst.append("#A6B91A")
+            elif key == "Grass":
+                color_lst.append("#7AC74C")
+            elif key == "Psychic":
+                color_lst.append("#F95587")
+            elif key == "Ground":
+                color_lst.append("#E2BF65")
+            elif key == "Water":
+                color_lst.append("#6390F0")
+            elif key == "Steel":
+                color_lst.append("#B7B7CE")
+            elif key == "Electric":
+                color_lst.append("#F7D02C")
+            elif key == "Fighting":
+                color_lst.append("#C22E28")
+            elif key == "Dragon":
+                color_lst.append("#6F35FC")
+            elif key == "Fairy":
+                color_lst.append("#D685AD")
+            elif key == "Flying":
+                color_lst.append("#A98FF3")
+            elif key == "Ice":
+                color_lst.append("#96D9D6")
+            elif key == "Poison":
+                color_lst.append("#A33EA1")
+            elif key == "Ghost":
+                color_lst.append("#735797")
+            else:
+                color_lst.append("#B6A136")
+        
+        fig, ax = plt.subplots()
+
+        bars = plt.bar(list(calculation_dict.keys()),list(calculation_dict.values()),edgecolor='black',color=color_lst)
+
+        plt.title("Average Poke Type to Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.xlabel("Poke Type", labelpad=15, color='#333333')
+        plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
+        
+        ## Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#DDDDDD')
+        ax.tick_params(bottom=False, left=False)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(True, color='#827E7E')
+        ax.xaxis.grid(False)
+
+        for bar in bars:
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.5,
+                round(bar.get_height(), 1),
+                horizontalalignment='center',
+                color="#4B3F3F",
+                weight='bold')
+
+        plt.tight_layout()
+
+        plt.show()
+        
 def main():
     conn = sqlite3.connect('PokeDatabase.db')
     cur=conn.cursor()
@@ -451,12 +583,21 @@ def main():
     print("Ability table has finished")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
     print("Pokemon table has finished")
-    movevisual=server.visualization_move_data(cur, conn)
-    print(movevisual)
-    movetypevisual1=server.visualization_movetype_str_data1(cur, conn)
-    print(movetypevisual1)
-    movetypevisual2=server.visualization_movetype_str_data2(cur, conn)
-    print(movetypevisual2)
+    server.calculationsFile(server.pokemonTypeStrCalculator(cur, conn))
+    print("Calculations file has finished")
+    server.powerAccuracyVisualization(cur, conn)
+    print("Move Power to Move Accuracy Graph has finished")
+    server.moveTypeStrVisualization1(cur, conn)
+    print("Move Type to Overall Strength Graph (1) has finished")
+    server.moveTypeStrVisualization2(cur, conn)
+    print("Move Type to Overall Strength Graph (2) has finished")
+    server.pokemonTypeStrVisualization2(server.pokemonTypeStrCalculator(cur, conn))
+    print("Poke Type to Overall Strength Graph (2) has finished")
+
+    
+
+    #server.pokemonTypeStrVisualization1(cur, conn)
+    #print("Pokemon Type Overall Strength Graph (1) has finished")
 
 
 
