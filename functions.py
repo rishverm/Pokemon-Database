@@ -293,14 +293,20 @@ class Pokemon:
             else:
                 move_combined_dict[tup[1]].append(tup[0])
 
-        print(poke_combined_dict)
-        print("---------------------")
-        print(move_combined_dict)
+        for key, value in poke_combined_dict.items():
+            poke_combined_dict[key] = round(sum(value)/len(value),2)
 
+        for key, value in move_combined_dict.items():
+            move_combined_dict[key] = round(sum(value)/len(value),2)
+
+        f = open("poke.txt", "w")
+        f.write("Strongest Pokemon Type: " + str(sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[0]) + "\n")
+        f.write("Weakest Pokemon Type: " + str(sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[-1]) + "\n")
+        f.write("Strongest Move Type: " + str(sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[0]) + "\n")
+        f.write("Weakest Move Type: " + str(sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[-1]) + "\n")
+        f.write("Strongest Ability:" + "\n")
+        f.write("Weakest Ability:" + "\n")
         
-
-        f = open("poke.csv", "w")
-        f.write("Type,AvgPokeStrength,AvgMoveStrength,AvgAbilityRarity" + "\n")
         f.close()
         
     #You must select some data from all of the tables in your database and calculate
@@ -712,8 +718,8 @@ def main():
     print("Ability table has finished")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
     print("Pokemon table has finished")
-    #server.calculationsFile(cur, conn)
-    #print("Calculations file has finished")
+    server.calculationsFile(cur, conn)
+    print("Calculations file has finished")
     server.powerAccuracyVisualization(cur, conn)
     print("Move Power to Move Accuracy Graph has finished")
     server.moveTypeStrVisualization1(cur, conn)
