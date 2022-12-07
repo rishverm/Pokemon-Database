@@ -21,7 +21,7 @@ class Pokemon:
 
     # initializes database and tables
     def createStructure(self,cur,conn):
-        cur.execute("CREATE TABLE IF NOT EXISTS Pokemon (PokemonID INTEGER PRIMARY KEY, TypeID INTEGER, AbilityIDs CHAR, MoveIDs CHAR, PokemonName STRING UNIQUE)")
+        cur.execute("CREATE TABLE IF NOT EXISTS Pokemon (PokemonID INTEGER PRIMARY KEY, TypeID INTEGER, AbilityIDs CHAR, MoveIDs CHAR, PokemonName STRING UNIQUE, OverallStrength FLOAT)")
         cur.execute("CREATE TABLE IF NOT EXISTS Moves (MoveID INTEGER PRIMARY KEY, TypeID INTEGER, MoveName STRING UNIQUE, Accuracy FLOAT, Power INTEGER, OverallStrength FLOAT)")
         cur.execute("CREATE TABLE IF NOT EXISTS Type (TypeID INTEGER PRIMARY KEY, TypeName STRING UNIQUE)")
         cur.execute("CREATE TABLE IF NOT EXISTS Ability (AbilityID INTEGER PRIMARY KEY, AbilityName STRING UNIQUE)")
@@ -198,11 +198,13 @@ class Pokemon:
                 abilityNames=pokemonAbilityDiction[name]
                 moveIDs=[]
                 abilityIDs=[]
+                total_moves_str = []
                 for move in moveNames:
                     cur.execute("Select * from Moves")
                     for row in cur:
                         if row[2]== move:
                             moveIDs.append(str(row[0]))
+                            total_moves_str.append(row[5])
                             break
                 for ability in abilityNames:
                     cur.execute("Select * from Ability")
@@ -215,11 +217,12 @@ class Pokemon:
                     if row[1]==type:
                         typeID= int(row[0])
                         break
+                pokemonOverallStr = round(sum(total_moves_str)/len(total_moves_str),2)
                 moveIDs=','.join(moveIDs)
                 abilityIDs=','.join(abilityIDs)
                 if len(moveIDs)==0:
                     continue
-                cur.execute("INSERT OR IGNORE INTO Pokemon (TypeID,AbilityIDs,MoveIDs,PokemonName) VALUES (?,?,?,?)",(typeID,abilityIDs,moveIDs,name))
+                cur.execute("INSERT OR IGNORE INTO Pokemon (TypeID,AbilityIDs,MoveIDs,PokemonName,OverallStrength) VALUES (?,?,?,?,?)",(typeID,abilityIDs,moveIDs,name,pokemonOverallStr))
             except:
                 continue
         conn.commit()
@@ -227,39 +230,61 @@ class Pokemon:
     #creates file ADD MORE HERE WHEN YOU ARE DONE
     # TALK ABOUT WHAT THE FUNCTION DOES HERE
     # ...............
-    def pokemonTypeStrCalculator(self, cur, conn):
-            cur.execute("SELECT Pokemon.MoveIDs, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
-            poke_type_move_lst = cur.fetchall()
-            conn.commit()
-            cur.execute("SELECT MoveID, OverallStrength FROM Moves")
-            move_str_lst = cur.fetchall()
-            conn.commit()
-            
-            move_str_dict = {}
-            for tup in move_str_lst:
-                move_str_dict[tup[0]] = tup[1]
+    # def pokemonTypeStrCalculator(self, cur, conn):
+    #         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+    #         poke_type_move_lst = cur.fetchall()
+    #         conn.commit()
+    #         cur.execute("SELECT MoveID, OverallStrength FROM Moves")
+    #         move_str_lst = cur.fetchall()
+    #         conn.commit()
+    #         move_str_dict = {}
+    #         for tup in move_str_lst:
+    #             move_str_dict[tup[0]] = tup[1]
 
-            type_overallstr_dict = {}
-            for tup in poke_type_move_lst:
-                for item in tup:
-                    if item == tup[0]:
-                        total = 0
-                        for num in item.split(","):
-                            num = int(num)
-                            num = move_str_dict[num]
-                            total += num
-                        if tup[1] not in type_overallstr_dict:
-                            type_overallstr_dict[tup[1]] = [total/len(item.split(","))]
-                        else:
-                            type_overallstr_dict[tup[1]].append(total/len(item.split(",")))
+    #         type_overallstr_dict = {}
+    #         for tup in poke_type_move_lst:
+    #             for item in tup:
+    #                 if item == tup[0]:
+    #                     total = 0
+    #                     for num in item.split(","):
+    #                         num = int(num)
+    #                         num = move_str_dict[num]
+    #                         total += num
+    #                     if tup[1] not in type_overallstr_dict:
+    #                         type_overallstr_dict[tup[1]] = [total/len(item.split(","))]
+    #                     else:
+    #                         type_overallstr_dict[tup[1]].append(total/len(item.split(",")))
                             
-            return type_overallstr_dict
+    #         return type_overallstr_dict
 
-    def calculationsFile(self,calculation_dict):
+    def calculationsFile(self, cur, con):
+        cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+        type_pokestr_lst = cur.fetchall()
+        cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
+        type_movestr_lst = cur.fetchall()
+
+        poke_combined_dict = {}
+        for tup in type_pokestr_lst:
+            if tup[1] not in poke_combined_dict:
+                poke_combined_dict[tup[1]] = [tup[0]]
+            else:
+                poke_combined_dict[tup[1]].append(tup[0])
+
+        move_combined_dict = {}
+        for tup in type_movestr_lst:
+            if tup[1] not in move_combined_dict:
+                move_combined_dict[tup[1]] = [tup[0]]
+            else:
+                move_combined_dict[tup[1]].append(tup[0])
+
+        print(poke_combined_dict)
+        print("---------------------")
+        print(move_combined_dict)
+
+        
+
         f = open("poke.csv", "w")
-        f.write("PokeType,OverallStr" + "\n")
-        for key, value in calculation_dict.items():
-            f.write(key + "," + str(round(sum(value)/len(value), 2)) + "\n")
+        f.write("Type,AvgPokeStrength,AvgMoveStrength,AvgAbilityRarity" + "\n")
         f.close()
         
     #You must select some data from all of the tables in your database and calculate
@@ -317,16 +342,16 @@ class Pokemon:
     #change code so that each type has a different color for their overallstr points
     def moveTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
-        move_info_lst = cur.fetchall()
+        type_movestr_lst = cur.fetchall()
         conn.commit()
         type_lst = []
         overallstr_lst = []
-        for tup in move_info_lst:
+        for tup in type_movestr_lst:
             type_lst.append(tup[1])
             overallstr_lst.append(tup[0])
 
         color_lst = []
-        for tup in move_info_lst:
+        for tup in type_movestr_lst:
             if tup[1] == "Normal":
                 color_lst.append("#A8A77A")
             elif tup[1] == "Fire":
@@ -391,10 +416,10 @@ class Pokemon:
 
     def moveTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
-        move_info_lst = cur.fetchall()
+        type_movestr_lst = cur.fetchall()
         conn.commit()
         combined_dict = {}
-        for tup in move_info_lst:
+        for tup in type_movestr_lst:
             if tup[1] not in combined_dict:
                 combined_dict[tup[1]] = [tup[0]]
             else:
@@ -449,7 +474,7 @@ class Pokemon:
 
         bars = plt.bar(types,avg_lst,edgecolor='black',color=color_lst)
 
-        plt.title("Average Move Type to Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.title("Move Type to Average Overall Strength", pad=15, weight="bold", color='#333333')
         plt.xlabel("Move Type", labelpad=15, color='#333333')
         plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
         
@@ -478,19 +503,99 @@ class Pokemon:
         plt.show()
 
 # add documentation 
-    def pokemonTypeStrVisualization1(self,calculation_dict):
-        pass
-            #for key, value in type_overallstr_dict.items():
-            # type_overallstr_dict[key] = (round(sum(value)/len(value), 2))
+    def pokemonTypeStrVisualization1(self, cur, conn):
+        cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+        type_pokestr_lst = cur.fetchall()
+        conn.commit()
+        type_lst = []
+        overallstr_lst = []
+        for tup in type_pokestr_lst:
+            type_lst.append(tup[1])
+            overallstr_lst.append(tup[0])
+
+        color_lst = []
+        for tup in type_pokestr_lst:
+            if tup[1] == "Normal":
+                color_lst.append("#A8A77A")
+            elif tup[1] == "Fire":
+                color_lst.append("#EE8130")
+            elif tup[1] == "Dark":
+                  color_lst.append("#705746")
+            elif tup[1] == "Bug":
+                color_lst.append("#A6B91A")
+            elif tup[1] == "Grass":
+                color_lst.append("#7AC74C")
+            elif tup[1] == "Psychic":
+                color_lst.append("#F95587")
+            elif tup[1] == "Ground":
+                color_lst.append("#E2BF65")
+            elif tup[1] == "Water":
+                color_lst.append("#6390F0")
+            elif tup[1] == "Steel":
+                color_lst.append("#B7B7CE")
+            elif tup[1] == "Electric":
+                color_lst.append("#F7D02C")
+            elif tup[1] == "Fighting":
+                color_lst.append("#C22E28")
+            elif tup[1] == "Dragon":
+                color_lst.append("#6F35FC")
+            elif tup[1] == "Fairy":
+                color_lst.append("#D685AD")
+            elif tup[1] == "Flying":
+                color_lst.append("#A98FF3")
+            elif tup[1] == "Ice":
+                color_lst.append("#96D9D6")
+            elif tup[1] == "Poison":
+                color_lst.append("#A33EA1")
+            elif tup[1] == "Ghost":
+                color_lst.append("#735797")
+            else:
+                color_lst.append("#B6A136")
+
+        fig, ax, = plt.subplots()
+
+        plt.scatter(x=type_lst,y=overallstr_lst,alpha=0.5,c=color_lst,edgecolors='black')
+
+        plt.title("Poke Type to Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.xlabel("Poke Type", labelpad=15, color='#333333')
+        plt.ylabel("Overall Strength", labelpad=15, color='#333333')
+
+        # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#DDDDDD')
+        ax.tick_params(bottom=False, left=False)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(False)
+        ax.xaxis.grid(True, color='#EEEEEE')
+
+        plt.tight_layout()
+
+        plt.show()
     
 
 # add documentation
-    def pokemonTypeStrVisualization2(self,calculation_dict):
-        for key, value in calculation_dict.items():
-               calculation_dict[key] = (round(sum(value)/len(value), 2))
+    def pokemonTypeStrVisualization2(self, cur, conn):
+        cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+        type_pokestr_lst = cur.fetchall()
+        conn.commit()
+        combined_dict = {}
+        for tup in type_pokestr_lst:
+            if tup[1] not in combined_dict:
+                combined_dict[tup[1]] = [tup[0]]
+            else:
+                combined_dict[tup[1]].append(tup[0])
+
+        avg_lst = []
+        for value in combined_dict.values():
+             avg_lst.append(sum(value)/len(value))
+
+        types = list(combined_dict.keys())
     
         color_lst = []
-        for key in calculation_dict.keys():
+        for key in combined_dict.keys():
             if key == "Normal":
                 color_lst.append("#A8A77A")
             elif key == "Fire":
@@ -530,9 +635,9 @@ class Pokemon:
         
         fig, ax = plt.subplots()
 
-        bars = plt.bar(list(calculation_dict.keys()),list(calculation_dict.values()),edgecolor='black',color=color_lst)
+        bars = plt.bar(types,avg_lst,edgecolor='black',color=color_lst)
 
-        plt.title("Average Poke Type to Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.title("Poke Type to Average Overall Strength", pad=15, weight="bold", color='#333333')
         plt.xlabel("Poke Type", labelpad=15, color='#333333')
         plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
         
@@ -559,7 +664,13 @@ class Pokemon:
         plt.tight_layout()
 
         plt.show()
-        
+    
+
+    def AbilityRarityVisualization1(self, cur, conn):
+        cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
+        ability_lst = cur.fetchall()
+        print(ability_lst)
+
 def main():
     conn = sqlite3.connect('PokeDatabase.db')
     cur=conn.cursor()
@@ -583,22 +694,20 @@ def main():
     print("Ability table has finished")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
     print("Pokemon table has finished")
-    server.calculationsFile(server.pokemonTypeStrCalculator(cur, conn))
-    print("Calculations file has finished")
+    #server.calculationsFile(cur, conn)
+    #print("Calculations file has finished")
     server.powerAccuracyVisualization(cur, conn)
     print("Move Power to Move Accuracy Graph has finished")
     server.moveTypeStrVisualization1(cur, conn)
     print("Move Type to Overall Strength Graph (1) has finished")
     server.moveTypeStrVisualization2(cur, conn)
     print("Move Type to Overall Strength Graph (2) has finished")
-    server.pokemonTypeStrVisualization2(server.pokemonTypeStrCalculator(cur, conn))
+    server.pokemonTypeStrVisualization1(cur, conn)
+    print("Poke Type to Overall Strength Graph (1) has finished")
+    server.pokemonTypeStrVisualization2(cur, conn)
     print("Poke Type to Overall Strength Graph (2) has finished")
-
-    
-
-    #server.pokemonTypeStrVisualization1(cur, conn)
-    #print("Pokemon Type Overall Strength Graph (1) has finished")
-
+    server.AbilityRarityVisualization1(cur, conn)
+    print("Ability Rarity Graph has finished")
 
 
 main()
