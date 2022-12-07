@@ -24,7 +24,7 @@ class Pokemon:
         cur.execute("CREATE TABLE IF NOT EXISTS Pokemon (PokemonID INTEGER PRIMARY KEY, TypeID INTEGER, AbilityIDs CHAR, MoveIDs CHAR, PokemonName STRING UNIQUE, OverallStrength FLOAT)")
         cur.execute("CREATE TABLE IF NOT EXISTS Moves (MoveID INTEGER PRIMARY KEY, TypeID INTEGER, MoveName STRING UNIQUE, Accuracy FLOAT, Power INTEGER, OverallStrength FLOAT)")
         cur.execute("CREATE TABLE IF NOT EXISTS Type (TypeID INTEGER PRIMARY KEY, TypeName STRING UNIQUE)")
-        cur.execute("CREATE TABLE IF NOT EXISTS Ability (AbilityID INTEGER PRIMARY KEY, AbilityName STRING UNIQUE)")
+        cur.execute("CREATE TABLE IF NOT EXISTS Ability (AbilityID INTEGER PRIMARY KEY, AbilityName STRING UNIQUE, Count INTEGER)")
         conn.commit()
 
     #requires limit of number of pokemon
@@ -91,6 +91,22 @@ class Pokemon:
                     abilitylist.append(ability['ability']['name'])
                     returnedPokemonAbilityDiction[pokemon]=abilitylist
         return returnedPokemonAbilityDiction
+
+    #documentation goes here
+    def getAbilityCount(self,returnedPokemonAbilityDiction):
+        returnedAbilityCountDiction={}
+        for lst in returnedPokemonAbilityDiction.values():
+            for ability in lst:
+                url= "https://pokeapi.co/api/v2/ability/" + ability.lower() + "/"
+                r=requests.get(url)
+                if r.ok:
+                    diction=json.loads(r.text)
+                    for pokemon in diction["pokemon"]:
+                        if ability not in returnedAbilityCountDiction:
+                            returnedAbilityCountDiction[ability] = 0
+                        else:
+                            returnedAbilityCountDiction[ability] += 1
+        return returnedAbilityCountDiction
 
     # requires pokemonMoveDiction returned from getPokemonMoves
     #returns a dictionary where the key is a pokemon move and value is a dictionary where type,power, accuracy are keys, and values are their actual values
@@ -178,10 +194,10 @@ class Pokemon:
         conn.commit()
 
     #inserts data into ability table using dictionary returned from getPokemonAbilities (pokeAPI requirement)
-    def insertAbilityData(self,cur,conn,pokemonAbilityDiction):
+    def insertAbilityData(self,cur,conn,pokemonAbilityDiction,abilityCountDiction):
         for abilityList in pokemonAbilityDiction.values():
             for ability in abilityList:
-                cur.execute("INSERT OR IGNORE INTO Ability (AbilityName) VALUES (?)",(ability,))
+                cur.execute("INSERT OR IGNORE INTO Ability (AbilityName,Count) VALUES (?,?)",(ability,abilityCountDiction[ability]))
         conn.commit()
 
     #Inserts data into pokemon table using dictionary returned from getPokemonNameTypes (pogoAPI requirement), getPokemonMoves (pokeAPI), and getPokemonAbilities (pokeAPI)
@@ -669,7 +685,7 @@ class Pokemon:
     def AbilityRarityVisualization1(self, cur, conn):
         cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
         ability_lst = cur.fetchall()
-        print(ability_lst)
+        #print(ability_lst)
 
 def main():
     conn = sqlite3.connect('PokeDatabase.db')
@@ -683,6 +699,8 @@ def main():
     print("Pokemon moves has finished")
     pokemonAbilityDiction=server.getPokemonAbilities(pokemonDiction)
     print("Pokemon Abilities has finished")
+    abilityCountDiction=server.getAbilityCount(pokemonAbilityDiction)
+    print("Ability Count has finished")
     mnapDiction=server.getMoveInfo(pokemonMoveDiction)
     print("Pokemon move info has finished")
     # getMoveInfo takes a while (around 120 seconds), the other functions are quick
@@ -690,7 +708,7 @@ def main():
     print("Type table has finished")
     server.insertMoveData(cur,conn,mnapDiction)
     print("Move table has finished")
-    server.insertAbilityData(cur,conn,pokemonAbilityDiction)
+    server.insertAbilityData(cur,conn,pokemonAbilityDiction,abilityCountDiction)
     print("Ability table has finished")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
     print("Pokemon table has finished")
