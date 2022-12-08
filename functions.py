@@ -288,7 +288,7 @@ class Pokemon:
                 continue
         conn.commit()
 
-    # add documentation
+    # add documentation - mention how this is the "Process the data" section
     def calculationsFile(self, cur, con):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
@@ -391,7 +391,7 @@ class Pokemon:
         
         f.close()
         
-    # add documentation here too
+    # add documentation here too mention how this is the visualize the data section and maybe show how u met the reqs?
     def powerAccuracyVisualization(self, cur, conn):
         cur.execute("SELECT Accuracy, Power FROM Moves")
         move_info_lst = cur.fetchall()
@@ -818,6 +818,8 @@ class Pokemon:
         plt.show()
 
 def main():
+    print("Beginning Run")
+    print("---------------------------------------------------------------------")
     # Set up
     print("Started set up...")
     conn = sqlite3.connect('PokeDatabase.db')
