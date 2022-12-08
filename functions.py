@@ -30,7 +30,7 @@ class Pokemon:
     #requires limit of number of pokemon
     # chooses the pokemon being focused on, returns a dictionary where the key is pokemon and value are their types
     # {pokemon1: type, pokemon2: type, pokemon3: type}
-    def getPokemonNameTypes(self,limit):
+    def getPokemonNameTypes(self,cur,conn,limit):
             url="https://pogoapi.net/api/v1/pokemon_types.json"
             r=requests.get(url)
             listing= json.loads(r.text)
@@ -38,6 +38,14 @@ class Pokemon:
             returnedPokemonDiction={}
             val=0
             for num in listing:
+                cur.execute("Select PokemonName from Pokemon")
+                check=False
+                for row in cur:
+                    if row[0]==num["pokemon_name"]:
+                        check=True
+                        break
+                if check:
+                    continue
                 if val >= limit:
                     break
                 elif val < limit and num["form"]=="Normal":
@@ -53,43 +61,78 @@ class Pokemon:
     def getPokemonMoves(self,cur,conn,pokemonDiction):
         pokemonNames= list(pokemonDiction.keys())
         returnedPokemonMoveDiction={}
+        moveList=[]
         for pokemon in pokemonNames:
             iter=0
             url= "https://pokeapi.co/api/v2/pokemon/" + pokemon.lower() + "/"
             r=requests.get(url)
             if r.ok:
                 diction=json.loads(r.text)
-                movelist=[]
+                moveVal=[]
                 for move in diction['moves']:
+                    if move['move']['name'] in moveList:
+                        moveVal.append(move['move']['name'])
+                        continue
+                    checking=False
+                    cur.execute("Select MoveName from Moves")
+                    for row in cur:
+                        if row[0]==move['move']['name']:
+                            moveVal.append(move['move']['name'])
+                            checking=True
+                            break
+                    if checking:
+                        continue
                     moveurl= "https://pokeapi.co/api/v2/move/" + move['move']['name'].lower() + "/"
                     moveurl= moveurl.replace(' ','-')
                     re=requests.get(moveurl)
                     moveDict=json.loads(re.text)
-                    cur.execute("Select MoveName from Moves")
-                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 9: 
+                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 1: 
                         iter+=1
-                        movelist.append(move['move']['name'])
-                    elif iter >= 9:
+                        moveVal.append(move['move']['name'])
+                        moveList.append(move['move']['name'])
+                    elif iter >= 1:
                         break
-                returnedPokemonMoveDiction[pokemon]=movelist
+                    else:
+                        continue
+                returnedPokemonMoveDiction[pokemon]=moveVal
+
                 
         return returnedPokemonMoveDiction
 
     # requires pokemonDiction returned from getPokemonNameTypes
     # returns a dictionary where the key is pokemon and value are their list of moves
     # {pokemon1: [ability1,ability2,ability3], pokemon2: [ability1,ability2,ability3,ability4], pokemon3:[ability1,ability2,ability3,ability4]}
-    def getPokemonAbilities(self,pokemonDiction):
+    def getPokemonAbilities(self,cur,conn,pokemonDiction):
         pokemonNames= list(pokemonDiction.keys())
         returnedPokemonAbilityDiction={}
-        for pokemon in pokemonNames:
+        abilityList=[]
+        for pokemon in pokemonNames:     
+            iter=0
             url= "https://pokeapi.co/api/v2/pokemon/" + pokemon.lower() + "/"
             r=requests.get(url)
             if r.ok:
                 diction=json.loads(r.text)
-                abilitylist=[]
+                abilityVal=[]
                 for ability in diction['abilities']:
-                    abilitylist.append(ability['ability']['name'])
-                    returnedPokemonAbilityDiction[pokemon]=abilitylist
+                    if ability['ability']['name'] in abilityList:
+                        abilityVal.append(ability['ability']['name'])
+                        continue
+                    checking=False
+                    cur.execute("Select AbilityName from Ability")
+                    for row in cur:
+                        if row[0]==ability['ability']['name']:
+                            abilityVal.append(ability['ability']['name'])
+                            checking=True
+                            break
+                    if checking:
+                        continue
+                    if iter < 1:
+                        abilityVal.append(ability['ability']['name'])
+                        abilityList.append(ability['ability']['name'])
+                        returnedPokemonAbilityDiction[pokemon]=abilityVal
+                        iter+=1
+                    else:
+                        break
         return returnedPokemonAbilityDiction
 
     #documentation goes here
@@ -699,17 +742,16 @@ def main():
     server = Pokemon()
     server.createStructure(cur,conn)
     print("Create structure has finished")
-    pokemonDiction= server.getPokemonNameTypes(25)
+    pokemonDiction= server.getPokemonNameTypes(cur,conn,25)
     print("Pokemon Name Types has finished")
     pokemonMoveDiction=server.getPokemonMoves(cur,conn,pokemonDiction)
     print("Pokemon moves has finished")
-    pokemonAbilityDiction=server.getPokemonAbilities(pokemonDiction)
+    pokemonAbilityDiction=server.getPokemonAbilities(cur,conn,pokemonDiction)
     print("Pokemon Abilities has finished")
     abilityCountDiction=server.getAbilityCount(pokemonAbilityDiction)
     print("Ability Count has finished")
     mnapDiction=server.getMoveInfo(pokemonMoveDiction)
     print("Pokemon move info has finished")
-    # getMoveInfo takes a while (around 120 seconds), the other functions are quick
     server.insertTypeData(cur,conn,pokemonDiction,mnapDiction)
     print("Type table has finished")
     server.insertMoveData(cur,conn,mnapDiction)
