@@ -298,6 +298,12 @@ class Pokemon:
         ability_lst = cur.fetchall()
         cur.execute("SELECT AbilityID, AbilityName FROM Ability")
         ability_names = cur.fetchall()
+        cur.execute("SELECT Count, AbilityName FROM Ability")
+        ability_count = cur.fetchall()
+        cur.execute("SELECT Moves.TypeID, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
+        type_move_count = cur.fetchall()
+        cur.execute("SELECT Pokemon.TypeID, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+        type_poke_count = cur.fetchall()
 
         poke_combined_dict = {}
         for tup in type_pokestr_lst:
@@ -323,11 +329,25 @@ class Pokemon:
 
         for key, value in ability_overallstr_dict.items():
             ability_overallstr_dict[key] = round(sum(value)/len(value),2)
-
+            
         ability_name_dict = {}
         for tup in ability_names:
             if str(tup[0]) in list(ability_overallstr_dict.keys()):
                 ability_name_dict[tup[1]] = ability_overallstr_dict[str(tup[0])]
+
+        type_move_count_dict = {}
+        for tup in type_move_count:
+            if tup[1] not in type_move_count_dict:
+                type_move_count_dict[tup[1]] = 1
+            else:
+                type_move_count_dict[tup[1]] += 1
+
+        type_poke_count_dict = {}
+        for tup in type_poke_count:
+            if tup[1] not in type_poke_count_dict:
+                type_poke_count_dict[tup[1]] = 1
+            else:
+                type_poke_count_dict[tup[1]] += 1
 
         for key, value in poke_combined_dict.items():
             poke_combined_dict[key] = round(sum(value)/len(value),2)
@@ -335,13 +355,39 @@ class Pokemon:
         for key, value in move_combined_dict.items():
             move_combined_dict[key] = round(sum(value)/len(value),2)
 
-        f = open("poke.txt", "w")
-        f.write("Strongest Pokemon Type: " + str(sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[0]) + "\n")
-        f.write("Weakest Pokemon Type: " + str(sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[-1]) + "\n")
-        f.write("Strongest Move Type: " + str(sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[0]) + "\n")
-        f.write("Weakest Move Type: " + str(sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[-1]) + "\n")
-        f.write("Strongest Ability: " + str(sorted(ability_name_dict, key=ability_name_dict.get, reverse=True)[0]).capitalize() + "\n")
-        f.write("Weakest Ability: " + str(sorted(ability_name_dict, key=ability_name_dict.get, reverse=True)[-1]).capitalize() + "\n")
+        strongest_pokemon_type = sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[0]
+        weakest_pokemon_type = sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[-1]
+        most_common_poke_type = sorted(type_poke_count_dict, key=type_poke_count_dict.get, reverse=True)[0]
+        least_common_poke_type = sorted(type_poke_count_dict, key=type_poke_count_dict.get, reverse=True)[-1]
+
+        strongest_move_type = sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[0]
+        weakest_move_type =  sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[-1]
+        most_common_move_type = sorted(type_move_count_dict, key=type_move_count_dict.get, reverse=True)[0]
+        least_common_move_type = sorted(type_move_count_dict, key=type_move_count_dict.get, reverse=True)[-1]
+
+        strongest_ability = sorted(ability_name_dict, key=ability_name_dict.get, reverse=True)[0]
+        weakest_ability = sorted(ability_name_dict, key=ability_name_dict.get, reverse=True)[-1]
+        most_common_ability = sorted(ability_count)[-1][1]
+        least_common_ability = sorted(ability_count)[0][1]
+
+        f = open("poke_calculations.txt", "w")
+        f.write("POKEMON TYPE:" + "\n")
+        f.write("- Strongest Pokemon Type: " + strongest_pokemon_type + " (" + str(poke_combined_dict[strongest_pokemon_type]) + " Overall Strength)" + "\n")
+        f.write("- Weakest Pokemon Type: " + weakest_pokemon_type  + " (" + str(poke_combined_dict[weakest_pokemon_type]) + " Overall Strength)" + "\n")
+        f.write("- Most Common Poke Type: " + most_common_poke_type + " (Occurred " + str(type_poke_count_dict[most_common_poke_type]) + " Times)" + "\n")
+        f.write("- Least Common Poke Type: " + least_common_poke_type + " (Occurred " + str(type_poke_count_dict[least_common_poke_type]) + " Times)" + "\n")
+        f.write("--------------------------------------------------------" + "\n")
+        f.write("MOVE TYPE:" + "\n")
+        f.write("- Strongest Move Type: " + strongest_move_type + " (" + str(move_combined_dict[strongest_move_type]) + " Overall Strength)" + "\n")
+        f.write("- Weakest Move Type: " + weakest_move_type + " (" + str(move_combined_dict[weakest_move_type]) + " Overall Strength)" + "\n")
+        f.write("- Most Common Move Type: " + most_common_move_type + " (Occurred " + str(type_move_count_dict[most_common_move_type]) + " Times)" + "\n")
+        f.write("- Least Common Move Type: " + least_common_move_type + " (Occurred " + str(type_move_count_dict[least_common_move_type]) + " Times)" + "\n")
+        f.write("--------------------------------------------------------" + "\n")
+        f.write("ABILITIES:" + "\n")
+        f.write("- Strongest Ability: " + strongest_ability.capitalize() + " (" + str(ability_name_dict[strongest_ability]) + " Overall Strength)" + "\n")
+        f.write("- Weakest Ability: " + weakest_ability.capitalize() + " (" + str(ability_name_dict[weakest_ability]) + " Overall Strength)" + "\n")
+        f.write("- Most Common Ability: " + most_common_ability.capitalize() + " (Occurred " + str(sorted(ability_count)[-1][0]) + " Times)" + "\n")
+        f.write("- Least Common Ability: " + least_common_ability.capitalize() + " (Occurred " + str(sorted(ability_count)[0][0]) + " Times)" + "\n")
         
         f.close()
         
@@ -773,51 +819,68 @@ class Pokemon:
 
 def main():
     # Set up
+    print("Started set up...")
     conn = sqlite3.connect('PokeDatabase.db')
     cur=conn.cursor()
     server = Pokemon()
     server.createStructure(cur,conn)
-    print("Create structure has finished")
+    print("Create structure has finished...")
+    print("Set up complete")
+    print("---------------------------------------------------------------------")
     
     # Data collection from APIs and website
+    print("Started data collection...")
     pokemonDiction= server.getPokemonNameTypes(cur,conn,25)
-    print("Pokemon Name Types has finished")
+    print("Pokemon Name Types has finished...")
     pokemonMoveDiction=server.getPokemonMoves(cur,conn,pokemonDiction)
-    print("Pokemon moves has finished")
+    print("Pokemon Moves has finished...")
     pokemonAbilityDiction=server.getPokemonAbilities(cur,conn,pokemonDiction)
-    print("Pokemon Abilities has finished")
+    print("Pokemon Abilities has finished...")
     abilityCountDiction=server.getAbilityCount(pokemonAbilityDiction)
-    print("Ability Count has finished")
+    print("Ability Count has finished...")
     mnapDiction=server.getMoveInfo(pokemonMoveDiction)
-    print("Pokemon move info has finished")
+    print("Pokemon Move info has finished...")
+    print("Data collection complete")
+    print("---------------------------------------------------------------------")
+
     
     # Data inserted into tables
+    print("Started inserting data into database...")
     server.insertTypeData(cur,conn,pokemonDiction,mnapDiction)
-    print("Type table has finished")
+    print("Type table has finished...")
     server.insertMoveData(cur,conn,mnapDiction)
-    print("Move table has finished")
+    print("Move table has finished...")
     server.insertAbilityData(cur,conn,pokemonAbilityDiction,abilityCountDiction)
-    print("Ability table has finished")
+    print("Ability table has finished...")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
-    print("Pokemon table has finished")
-    
+    print("Pokemon table has finished...")
+    print("Data insertion complete")
+    print("---------------------------------------------------------------------")
+
     # Calculations
+    print("Started calculation file...")
     server.calculationsFile(cur, conn)
-    print("Calculations file has finished")
+    print("Calculations file complete")
+    print("---------------------------------------------------------------------")
+
     
     # Visualizations
+    print("Started visualizations...")
     server.powerAccuracyVisualization(cur, conn)
-    print("Move Power to Move Accuracy Graph has finished")
+    print("Move Power to Move Accuracy Graph has finished...")
     server.moveTypeStrVisualization1(cur, conn)
-    print("Move Type to Overall Strength Graph (1) has finished")
+    print("Move Type to Overall Strength Graph (1) has finished...")
     server.moveTypeStrVisualization2(cur, conn)
-    print("Move Type to Overall Strength Graph (2) has finished")
+    print("Move Type to Overall Strength Graph (2) has finished...")
     server.pokemonTypeStrVisualization1(cur, conn)
-    print("Poke Type to Overall Strength Graph (1) has finished")
+    print("Poke Type to Overall Strength Graph (1) has finished...")
     server.pokemonTypeStrVisualization2(cur, conn)
-    print("Poke Type to Overall Strength Graph (2) has finished")
+    print("Poke Type to Overall Strength Graph (2) has finished...")
     server.AbilityCommonalityVisualization(cur, conn)
-    print("Ability Commonality to Overall Strength Graph has finished")
-
+    print("Ability Commonality to Overall Strength Graph has finished...")
+    print("Data visualizations complete")
+    print("---------------------------------------------------------------------")
+    
+    print("Run Complete")
 
 main()
