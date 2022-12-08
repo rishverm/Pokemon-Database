@@ -138,6 +138,7 @@ class Pokemon:
     #documentation goes here
     def getAbilityCount(self,returnedPokemonAbilityDiction):
         returnedAbilityCountDiction={}
+        dupChecker = []
         for lst in returnedPokemonAbilityDiction.values():
             for ability in lst:
                 url= "https://pokeapi.co/api/v2/ability/" + ability.lower() + "/"
@@ -146,9 +147,10 @@ class Pokemon:
                     diction=json.loads(r.text)
                     for pokemon in diction["pokemon"]:
                         if ability not in returnedAbilityCountDiction:
-                            returnedAbilityCountDiction[ability] = 0
-                        else:
+                            returnedAbilityCountDiction[ability] = 1
+                        elif ability in returnedAbilityCountDiction and ability not in dupChecker:
                             returnedAbilityCountDiction[ability] += 1
+                dupChecker.append(ability)
         return returnedAbilityCountDiction
 
     # requires pokemonMoveDiction returned from getPokemonMoves
@@ -286,41 +288,16 @@ class Pokemon:
                 continue
         conn.commit()
 
-    #creates file ADD MORE HERE WHEN YOU ARE DONE
-    # TALK ABOUT WHAT THE FUNCTION DOES HERE
-    # ...............
-    # def pokemonTypeStrCalculator(self, cur, conn):
-    #         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
-    #         poke_type_move_lst = cur.fetchall()
-    #         conn.commit()
-    #         cur.execute("SELECT MoveID, OverallStrength FROM Moves")
-    #         move_str_lst = cur.fetchall()
-    #         conn.commit()
-    #         move_str_dict = {}
-    #         for tup in move_str_lst:
-    #             move_str_dict[tup[0]] = tup[1]
-
-    #         type_overallstr_dict = {}
-    #         for tup in poke_type_move_lst:
-    #             for item in tup:
-    #                 if item == tup[0]:
-    #                     total = 0
-    #                     for num in item.split(","):
-    #                         num = int(num)
-    #                         num = move_str_dict[num]
-    #                         total += num
-    #                     if tup[1] not in type_overallstr_dict:
-    #                         type_overallstr_dict[tup[1]] = [total/len(item.split(","))]
-    #                     else:
-    #                         type_overallstr_dict[tup[1]].append(total/len(item.split(",")))
-                            
-    #         return type_overallstr_dict
-
+    # add documentation
     def calculationsFile(self, cur, con):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         type_movestr_lst = cur.fetchall()
+        cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
+        ability_lst = cur.fetchall()
+        cur.execute("SELECT AbilityID, AbilityName FROM Ability")
+        ability_names = cur.fetchall()
 
         poke_combined_dict = {}
         for tup in type_pokestr_lst:
@@ -336,6 +313,22 @@ class Pokemon:
             else:
                 move_combined_dict[tup[1]].append(tup[0])
 
+        ability_overallstr_dict = {}
+        for tup in ability_lst:
+            for abilityID in tup[0].split(","):
+                if abilityID not in ability_overallstr_dict:
+                    ability_overallstr_dict[abilityID] = [tup[1]]
+                else:
+                    ability_overallstr_dict[abilityID].append(tup[1])
+
+        for key, value in ability_overallstr_dict.items():
+            ability_overallstr_dict[key] = round(sum(value)/len(value),2)
+
+        ability_name_dict = {}
+        for tup in ability_names:
+            if str(tup[0]) in list(ability_overallstr_dict.keys()):
+                ability_name_dict[tup[1]] = ability_overallstr_dict[str(tup[0])]
+
         for key, value in poke_combined_dict.items():
             poke_combined_dict[key] = round(sum(value)/len(value),2)
 
@@ -347,22 +340,15 @@ class Pokemon:
         f.write("Weakest Pokemon Type: " + str(sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[-1]) + "\n")
         f.write("Strongest Move Type: " + str(sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[0]) + "\n")
         f.write("Weakest Move Type: " + str(sorted(move_combined_dict, key=move_combined_dict.get, reverse=True)[-1]) + "\n")
-        f.write("Strongest Ability:" + "\n")
-        f.write("Weakest Ability:" + "\n")
+        f.write("Strongest Ability: " + str(sorted(ability_name_dict, key=ability_name_dict.get, reverse=True)[0]).capitalize() + "\n")
+        f.write("Weakest Ability: " + str(sorted(ability_name_dict, key=ability_name_dict.get, reverse=True)[-1]).capitalize() + "\n")
         
         f.close()
         
-    #You must select some data from all of the tables in your database and calculate
-    #something from that data (20 points). You could calculate the count of how many items
-     #occur on a particular day of the week or the average of the number of items per day.
-     #● You must do at least one database join to select your data (20 points).
-     #● Write out the calculated data to a file as text (10 points) 
-
     # add documentation here too
     def powerAccuracyVisualization(self, cur, conn):
         cur.execute("SELECT Accuracy, Power FROM Moves")
         move_info_lst = cur.fetchall()
-        conn.commit()
         accuracy_lst = []
         power_lst = []
         for tup in move_info_lst:
@@ -408,7 +394,6 @@ class Pokemon:
     def moveTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         type_movestr_lst = cur.fetchall()
-        conn.commit()
         type_lst = []
         overallstr_lst = []
         for tup in type_movestr_lst:
@@ -482,7 +467,6 @@ class Pokemon:
     def moveTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         type_movestr_lst = cur.fetchall()
-        conn.commit()
         combined_dict = {}
         for tup in type_movestr_lst:
             if tup[1] not in combined_dict:
@@ -571,7 +555,6 @@ class Pokemon:
     def pokemonTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
-        conn.commit()
         type_lst = []
         overallstr_lst = []
         for tup in type_pokestr_lst:
@@ -645,7 +628,6 @@ class Pokemon:
     def pokemonTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
-        conn.commit()
         combined_dict = {}
         for tup in type_pokestr_lst:
             if tup[1] not in combined_dict:
@@ -731,17 +713,73 @@ class Pokemon:
         plt.show()
     
 
-    def AbilityRarityVisualization1(self, cur, conn):
+    def AbilityCommonalityVisualization(self, cur, conn):
         cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
         ability_lst = cur.fetchall()
-        #print(ability_lst)
+        cur.execute("SELECT AbilityID, Count FROM Ability")
+        count_lst = cur.fetchall()
+
+        ability_overallstr_dict = {}
+        for tup in ability_lst:
+            for abilityID in tup[0].split(","):
+                if abilityID not in ability_overallstr_dict:
+                    ability_overallstr_dict[abilityID] = [tup[1]]
+                else:
+                    ability_overallstr_dict[abilityID].append(tup[1])
+
+        for key, value in ability_overallstr_dict.items():
+            ability_overallstr_dict[key] = round(sum(value)/len(value),2)
+
+        y_lst = list(ability_overallstr_dict.values())
+
+        x_lst = []
+        for tup in count_lst:
+            if str(tup[0]) in list(ability_overallstr_dict.keys()):
+                x_lst.append(tup[1])
+                
+        fig, ax, = plt.subplots()
+
+        plt.scatter(x=x_lst,y=y_lst,alpha=0.3,edgecolors='black')
+
+        plt.title("Ability Commonality to Ability Overall Strength", pad=15, weight="bold", color='#333333')
+        plt.xlabel("Ability Commonality", labelpad=15, color='#333333')
+        plt.ylabel("Ability Overall Strength", labelpad=15, color='#333333')
+
+        # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#DDDDDD')
+        ax.tick_params(bottom=False, left=False)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(True, color='#EEEEEE')
+        ax.xaxis.grid(True, color='#EEEEEE')
+       
+        x = np.array(x_lst)
+        y = np.array(y_lst)
+
+        m, b = np.polyfit(x, y, 1)
+        plt.plot(x, (m*x+b))
+        
+        r = np.corrcoef(x, y)
+        corr_coeff = (r[1, 0])
+
+        plt.text(.03, .96, 'Correlation Coefficent = ' + str(round(corr_coeff,2)), ha='left', va='top', transform=ax.transAxes, weight='semibold')
+
+        plt.tight_layout()
+
+        plt.show()
 
 def main():
+    # Set up
     conn = sqlite3.connect('PokeDatabase.db')
     cur=conn.cursor()
     server = Pokemon()
     server.createStructure(cur,conn)
     print("Create structure has finished")
+    
+    # Data collection from APIs and website
     pokemonDiction= server.getPokemonNameTypes(cur,conn,25)
     print("Pokemon Name Types has finished")
     pokemonMoveDiction=server.getPokemonMoves(cur,conn,pokemonDiction)
@@ -752,6 +790,8 @@ def main():
     print("Ability Count has finished")
     mnapDiction=server.getMoveInfo(pokemonMoveDiction)
     print("Pokemon move info has finished")
+    
+    # Data inserted into tables
     server.insertTypeData(cur,conn,pokemonDiction,mnapDiction)
     print("Type table has finished")
     server.insertMoveData(cur,conn,mnapDiction)
@@ -760,8 +800,12 @@ def main():
     print("Ability table has finished")
     server.insertPokemonData(cur,conn,pokemonDiction,pokemonMoveDiction,pokemonAbilityDiction)
     print("Pokemon table has finished")
+    
+    # Calculations
     server.calculationsFile(cur, conn)
     print("Calculations file has finished")
+    
+    # Visualizations
     server.powerAccuracyVisualization(cur, conn)
     print("Move Power to Move Accuracy Graph has finished")
     server.moveTypeStrVisualization1(cur, conn)
@@ -772,8 +816,8 @@ def main():
     print("Poke Type to Overall Strength Graph (1) has finished")
     server.pokemonTypeStrVisualization2(cur, conn)
     print("Poke Type to Overall Strength Graph (2) has finished")
-    server.AbilityRarityVisualization1(cur, conn)
-    print("Ability Rarity Graph has finished")
+    server.AbilityCommonalityVisualization(cur, conn)
+    print("Ability Commonality to Overall Strength Graph has finished")
 
 
 main()

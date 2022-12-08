@@ -1,6 +1,0 @@
-Strongest Pokemon Type: Psychic
-Weakest Pokemon Type: Bug
-Strongest Move Type: Ground
-Weakest Move Type: Poison
-Strongest Ability:
-Weakest Ability:
