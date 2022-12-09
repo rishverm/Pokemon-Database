@@ -934,6 +934,7 @@ def main():
     
     # Visualizations
     print("Started visualizations...")
+    print("Visualizations Tab Opened - Exit the current visual to get to the next...")
     server.powerAccuracyVisualization(cur, conn)
     print("Move Power to Move Accuracy Graph has finished...")
     server.moveTypeStrVisualization1(cur, conn)
