@@ -133,13 +133,15 @@ class Pokemon:
                         break
         return returnedPokemonAbilityDiction
 
-    #documentation goes here
+    # requires returnedPokemonAbilityDiction from getPokemonAbilities
+    # returns a dictonary where the key is an ability name and the value is how many pokemon have said ability in the pokeapi
+    # {ability1: count, ability2: count, ability3: count...}
     def getAbilityCount(self,returnedPokemonAbilityDiction):
         returnedAbilityCountDiction={}
         dupChecker = []
         for lst in returnedPokemonAbilityDiction.values():
             for ability in lst:
-                url= "https://pokeapi.co/api/v2/ability/" + ability.lower() + "/"
+                url= "https://pokeapi.co/api/v2/ability/" + ability.lower() + "/" # call pokeapi to get ability information
                 r=requests.get(url)
                 if r.ok:
                     diction=json.loads(r.text)
@@ -148,11 +150,11 @@ class Pokemon:
                             returnedAbilityCountDiction[ability] = 1
                         elif ability in returnedAbilityCountDiction and ability not in dupChecker:
                             returnedAbilityCountDiction[ability] += 1
-                dupChecker.append(ability)
+                dupChecker.append(ability) # appends ability name to dupChecker list to make sure the ability is counted only once
         return returnedAbilityCountDiction
 
     # requires pokemonMoveDiction returned from getPokemonMoves
-    #returns a dictionary where the key is a pokemon move and value is a dictionary where type,power, accuracy are keys, and values are their actual values
+    # returns a dictionary where the key is a pokemon move and value is a dictionary where type,power, accuracy are keys, and values are their actual values
     # {move1:
     #        {
     #          power: power1
@@ -287,7 +289,24 @@ class Pokemon:
                 continue #moves on to next pokemon in case of errors
         conn.commit()
 
-    # add documentation - mention how this is the "Process the data" section
+    # requires connection to database (cur, con)
+    # takes data from all tables that originate from all apis/website 
+    # uses data to create "poke_calculations.txt" file that contains the calculations of
+    # - the strongest pokemon type
+    # - the weakest pokemon type
+    # - the most common pokemon type
+    # - the least common pokemon type
+    #
+    # - the strongest move type
+    # - the weakest move type
+    # - the most common move type
+    # - the least common move type
+    #
+    # - the strongest ability
+    # - the weakest ability
+    # - the most common ability
+    # - the least common ability
+    # does so by averaging the calculated strengths by how length, and by counting type and ability occurrences
     def calculationsFile(self, cur, con):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
@@ -304,6 +323,7 @@ class Pokemon:
         cur.execute("SELECT Pokemon.TypeID, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_poke_count = cur.fetchall()
 
+        # iterating through each list to create a dictionary for each SELECT
         poke_combined_dict = {}
         for tup in type_pokestr_lst:
             if tup[1] not in poke_combined_dict:
@@ -348,12 +368,14 @@ class Pokemon:
             else:
                 type_poke_count_dict[tup[1]] += 1
 
+        # average the values (lists) of the poke type and move type dictionaries to obtain a "final" number
         for key, value in poke_combined_dict.items():
             poke_combined_dict[key] = round(sum(value)/len(value),2)
 
         for key, value in move_combined_dict.items():
             move_combined_dict[key] = round(sum(value)/len(value),2)
 
+        # creates variables that sort the calculated dictionaries and take the last and first item from them (the largest and smallest)
         strongest_pokemon_type = sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[0]
         weakest_pokemon_type = sorted(poke_combined_dict, key=poke_combined_dict.get, reverse=True)[-1]
         most_common_poke_type = sorted(type_poke_count_dict, key=type_poke_count_dict.get, reverse=True)[0]
@@ -369,6 +391,7 @@ class Pokemon:
         most_common_ability = sorted(ability_count)[-1][1]
         least_common_ability = sorted(ability_count)[0][1]
 
+        # create the calculations file
         f = open("poke_calculations.txt", "w")
         f.write("POKEMON TYPE:" + "\n")
         f.write("- Strongest Pokemon Type: " + strongest_pokemon_type + " (" + str(poke_combined_dict[strongest_pokemon_type]) + " Overall Strength)" + "\n")
@@ -390,7 +413,9 @@ class Pokemon:
         
         f.close()
         
-    # add documentation here too mention how this is the visualize the data section and maybe show how u met the reqs?
+    # requires connection to database (cur,con)
+    # returns a scatterplot graph of each move's accuracy (x) to its power (y)
+    # draws regression line and writes correlation coefficient of the data points on the upper left portion of the graph
     def powerAccuracyVisualization(self, cur, conn):
         cur.execute("SELECT Accuracy, Power FROM Moves")
         move_info_lst = cur.fetchall()
@@ -409,6 +434,7 @@ class Pokemon:
         plt.ylabel("Power", labelpad=15, color='#333333')
 
         # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        # cleans up and beautifies the graph 
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -419,6 +445,7 @@ class Pokemon:
         ax.yaxis.grid(True, color='#EEEEEE')
         ax.xaxis.grid(True, color='#EEEEEE')
        
+       # creation and graphing of regression line
         x = np.array(accuracy_lst)
         y = np.array(power_lst)
 
@@ -428,14 +455,16 @@ class Pokemon:
         r = np.corrcoef(x, y)
         corr_coeff = (r[1, 0])
 
-        plt.text(.03, .96, 'Correlation Coefficent = ' + str(round(corr_coeff,2)), ha='left', va='top', transform=ax.transAxes, weight='semibold')
+        # mapping of correlation coefficient text and number
+        plt.text(.03, .96, 'Correlation Coefficient = ' + str(round(corr_coeff,2)), ha='left', va='top', transform=ax.transAxes, weight='semibold')
 
         plt.tight_layout()
 
         plt.show()
 
-    #add documnetation here
-    #change code so that each type has a different color for their overallstr points
+    # requires connection to database (cur,con)
+    # graphs each move's overall strength (power * accuracy) relative to its type
+    # returns graph of type (x) to move strength (y)
     def moveTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         type_movestr_lst = cur.fetchall()
@@ -445,6 +474,7 @@ class Pokemon:
             type_lst.append(tup[1])
             overallstr_lst.append(tup[0])
 
+        # keeps track of the type of each move to color code it properly
         color_lst = []
         for tup in type_movestr_lst:
             if tup[1] == "Normal":
@@ -493,6 +523,7 @@ class Pokemon:
         plt.ylabel("Overall Strength", labelpad=15, color='#333333')
 
         # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        # cleans up and beautifies the graph 
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -507,8 +538,10 @@ class Pokemon:
 
         plt.show()
 
-    # add documentation here
-
+    # requires connection to database (cur, conn)
+    # graphs the average of each move's overall strength relative to its type
+    # does so by dividing the total overall strength of all the moves of said type by the amount of moves of said type
+    # returns bar graph of averages
     def moveTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
         type_movestr_lst = cur.fetchall()
@@ -519,12 +552,14 @@ class Pokemon:
             else:
                 combined_dict[tup[1]].append(tup[0])
         
+        # finds average of each move type overall strength
         avg_lst = []
         for value in combined_dict.values():
             avg_lst.append(sum(value)/len(value))
 
         types = list(combined_dict.keys())
-
+        
+        # keeps track of the type of each move to color code it properly
         color_lst = []
         for key in combined_dict.keys():
             if key == "Normal":
@@ -573,6 +608,7 @@ class Pokemon:
         plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
         
         ## Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        # cleans up and beautifies the graph 
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -596,7 +632,9 @@ class Pokemon:
 
         plt.show()
 
-    # add documentation 
+    # requires connection to database (cur,con)
+    # graphs each pokemon's overall strength (by averaging the overall strength of its moves) relative to its type
+    # returns graph of type (x) to pokemon strength (y)
     def pokemonTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
@@ -606,6 +644,7 @@ class Pokemon:
             type_lst.append(tup[1])
             overallstr_lst.append(tup[0])
 
+        # keeps track of the type of each pokemon to color code it properly
         color_lst = []
         for tup in type_pokestr_lst:
             if tup[1] == "Normal":
@@ -654,6 +693,7 @@ class Pokemon:
         plt.ylabel("Overall Strength", labelpad=15, color='#333333')
 
         # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        # beautifies the graph 
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -669,7 +709,10 @@ class Pokemon:
         plt.show()
     
 
-    # add documentation
+    # requires connection to database (cur, conn)
+    # graphs the average of each pokemon's overall strength relative to its type
+    # does so by dividing the total overall strength of all the moves of said type by the amount of moves of said type
+    # returns bar graph of averages
     def pokemonTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
@@ -680,12 +723,14 @@ class Pokemon:
             else:
                 combined_dict[tup[1]].append(tup[0])
 
+        # finds average of each pokemon type overall strength
         avg_lst = []
         for value in combined_dict.values():
              avg_lst.append(sum(value)/len(value))
 
         types = list(combined_dict.keys())
     
+        # keeps track of the type of each move to color code it properly 
         color_lst = []
         for key in combined_dict.keys():
             if key == "Normal":
@@ -734,6 +779,7 @@ class Pokemon:
         plt.ylabel("Average Overall Strength", labelpad=15, color='#333333')
         
         ## Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        #beautifies the graph
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -757,13 +803,17 @@ class Pokemon:
 
         plt.show()
     
-    # add documentation
+    # requires connection to database (cur, con)
+    # returns a scatterplot of each ability's occurrences/commonality (x) to its overall strength (y)
+    # does so by averaging its overall strength based on the number of pokemon that have said ability and the overall strength of said pokemon
+    # draws regression line and writes correlation coefficient of the data points on the upper left portion of the graph
     def AbilityCommonalityVisualization(self, cur, conn):
         cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
         ability_lst = cur.fetchall()
         cur.execute("SELECT AbilityID, Count FROM Ability")
         count_lst = cur.fetchall()
 
+        # creates dictionary of the overall strength of each pokemon that have said ability
         ability_overallstr_dict = {}
         for tup in ability_lst:
             for abilityID in tup[0].split(","):
@@ -772,11 +822,13 @@ class Pokemon:
                 else:
                     ability_overallstr_dict[abilityID].append(tup[1])
 
+        # averages the overall strength of each ability
         for key, value in ability_overallstr_dict.items():
             ability_overallstr_dict[key] = round(sum(value)/len(value),2)
 
         y_lst = list(ability_overallstr_dict.values())
 
+        # gets count of each ability
         x_lst = []
         for tup in count_lst:
             if str(tup[0]) in list(ability_overallstr_dict.keys()):
@@ -791,6 +843,7 @@ class Pokemon:
         plt.ylabel("Ability Overall Strength", labelpad=15, color='#333333')
 
         # Citation https://www.pythoncharts.com/matplotlib/beautiful-bar-charts-matplotlib/
+        # beautifies graph
         ax.yaxis.grid(color='gray', linestyle='dashed')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -801,6 +854,7 @@ class Pokemon:
         ax.yaxis.grid(True, color='#EEEEEE')
         ax.xaxis.grid(True, color='#EEEEEE')
        
+       # creation and graphing of regression line
         x = np.array(x_lst)
         y = np.array(y_lst)
 
@@ -810,7 +864,8 @@ class Pokemon:
         r = np.corrcoef(x, y)
         corr_coeff = (r[1, 0])
 
-        plt.text(.03, .96, 'Correlation Coefficent = ' + str(round(corr_coeff,2)), ha='left', va='top', transform=ax.transAxes, weight='semibold')
+        # mapping of correlation coefficient text and number
+        plt.text(.03, .96, 'Correlation Coefficient = ' + str(round(corr_coeff,2)), ha='left', va='top', transform=ax.transAxes, weight='semibold')
 
         plt.tight_layout()
 
