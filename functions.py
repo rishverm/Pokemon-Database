@@ -15,6 +15,9 @@ import numpy as np
 
 class Pokemon:
 
+# ---------------------GATHER AND SAVE THE DATA-----------------------
+
+
     # initializes database and tables
     # requires connection to database (cur,conn)
     def createStructure(self,cur,conn):
@@ -289,6 +292,10 @@ class Pokemon:
                 continue #moves on to next pokemon in case of errors
         conn.commit()
 
+
+# ---------------------PROCESS THE DATA-----------------------
+
+
     # requires connection to database (cur, con)
     # takes data from all tables that originate from all apis/website 
     # uses data to create "poke_calculations.txt" file that contains the calculations of
@@ -414,6 +421,10 @@ class Pokemon:
         
         f.close()
         
+
+# ---------------------VISUALIZE THE DATA-----------------------
+
+
     # requires connection to database (cur,con)
     # returns a scatterplot graph of each move's accuracy (x) to its power (y)
     # draws regression line and writes correlation coefficient of the data points on the upper left portion of the graph
