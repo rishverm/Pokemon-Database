@@ -8,18 +8,15 @@ import unicodedata
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+#SI 206 Final Project by Avery Feldman, Jonah Feldman, and Rishabh Verma
+#Reports and visualizations are found under the Report folder
+#Obtained data about Pokemon and their moves, abilities, and types
+#Utilized 2 APIs (PokeAPI, Pokemon Go API) and 1 website (bulbapedia), limited to 25 with each run adding additional data
 
 class Pokemon:
 
-    # TLDR of what has been done: dictionaries of information have been created linking pokemon to their types and moves. A dictionary has also been created that gives more 
-    # information about pokemon moves. A dictionary has also been created that connects pokemon to their ability names. 
-    # I have also created the database declaration with the appropriate tables, and inserted data into all 4 tables.
-    # I believe these are all the functions we need for the python portion of this project but I could be wrong.
-    # I understand that this is a lot of changes and new information, but please feel free to change whatever you feel is necessary.
-    # What still has to be done: Process the Data, Visualize the Data, and Report (Part 3-5) 
-
     # initializes database and tables
+    # requires connection to database (cur,conn)
     def createStructure(self,cur,conn):
         cur.execute("CREATE TABLE IF NOT EXISTS Pokemon (PokemonID INTEGER PRIMARY KEY, TypeID INTEGER, AbilityIDs CHAR, MoveIDs CHAR, PokemonName STRING UNIQUE, OverallStrength FLOAT)")
         cur.execute("CREATE TABLE IF NOT EXISTS Moves (MoveID INTEGER PRIMARY KEY, TypeID INTEGER, MoveName STRING UNIQUE, Accuracy FLOAT, Power INTEGER, OverallStrength FLOAT)")
@@ -27,9 +24,10 @@ class Pokemon:
         cur.execute("CREATE TABLE IF NOT EXISTS Ability (AbilityID INTEGER PRIMARY KEY, AbilityName STRING UNIQUE, Count INTEGER)")
         conn.commit()
 
-    #requires limit of number of pokemon
+    # requires limit of number of pokemon (in main function, it is declared as 25) and connection to database (cor,conn)
     # chooses the pokemon being focused on, returns a dictionary where the key is pokemon and value are their types
     # {pokemon1: type, pokemon2: type, pokemon3: type}
+    # there are only about 18 types of pokemon, so we will never go over 25 entries for this table.
     def getPokemonNameTypes(self,cur,conn,limit):
             url="https://pogoapi.net/api/v1/pokemon_types.json"
             r=requests.get(url)
@@ -38,24 +36,24 @@ class Pokemon:
             returnedPokemonDiction={}
             val=0
             for num in listing:
-                cur.execute("Select PokemonName from Pokemon")
+                cur.execute("Select PokemonName from Pokemon") #Checks to make sure pokemon isn't repeated from database
                 check=False
                 for row in cur:
                     if row[0]==num["pokemon_name"]:
                         check=True
                         break
                 if check:
-                    continue
+                    continue #Chooses another pokemon if pokemon selected was already found in database
                 if val >= limit:
                     break
-                elif val < limit and num["form"]=="Normal":
+                elif val < limit and num["form"]=="Normal": #Only adding normal pokemon, otherwise move to the next entry
                     val+=1
                     returnedPokemonDiction[num["pokemon_name"]]=num["type"][0]
                 else:
                     continue
-            return returnedPokemonDiction
+            return returnedPokemonDiction 
 
-    # requires pokemonDiction returned from getPokemonNameTypes
+    # requires pokemonDiction returned from getPokemonNameTypes and connection to datbase (cur, conn)
     # returns a dictionary where the key is pokemon and value are their list of moves
     # {pokemon1: [move1,move2,move3], pokemon2: [move1,move2,move3,move4], pokemon3:[move1,move2,move3,move4]}
     def getPokemonMoves(self,cur,conn,pokemonDiction):
@@ -70,11 +68,11 @@ class Pokemon:
                 diction=json.loads(r.text)
                 moveVal=[]
                 for move in diction['moves']:
-                    if move['move']['name'] in moveList:
+                    if move['move']['name'] in moveList: #appends moves to dictionary values that have been added already to the list for previous pokemon during code run
                         moveVal.append(move['move']['name'])
                         continue
                     checking=False
-                    cur.execute("Select MoveName from Moves")
+                    cur.execute("Select MoveName from Moves") #appends moves to dictionary values that have been added already to the database
                     for row in cur:
                         if row[0]==move['move']['name']:
                             moveVal.append(move['move']['name'])
@@ -86,11 +84,11 @@ class Pokemon:
                     moveurl= moveurl.replace(' ','-')
                     re=requests.get(moveurl)
                     moveDict=json.loads(re.text)
-                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 1: 
+                    if moveDict['power']!=None and moveDict['accuracy']!=None and iter < 1: #appends new moves to list
                         iter+=1
                         moveVal.append(move['move']['name'])
                         moveList.append(move['move']['name'])
-                    elif iter >= 1:
+                    elif iter >= 1: #each pokemon adds 1 new move to the dictionary at the max, not including previously existing moves. That way we can only have 25 moves added at the max to the moves table per run.
                         break
                     else:
                         continue
@@ -99,7 +97,7 @@ class Pokemon:
                 
         return returnedPokemonMoveDiction
 
-    # requires pokemonDiction returned from getPokemonNameTypes
+    # requires pokemonDiction returned from getPokemonNameTypes and connection to database (cur,conn)
     # returns a dictionary where the key is pokemon and value are their list of moves
     # {pokemon1: [ability1,ability2,ability3], pokemon2: [ability1,ability2,ability3,ability4], pokemon3:[ability1,ability2,ability3,ability4]}
     def getPokemonAbilities(self,cur,conn,pokemonDiction):
@@ -113,12 +111,12 @@ class Pokemon:
             if r.ok:
                 diction=json.loads(r.text)
                 abilityVal=[]
-                for ability in diction['abilities']:
+                for ability in diction['abilities']: #appends abilities to dictionary values that have been added already to the list for previous pokemon during code run
                     if ability['ability']['name'] in abilityList:
                         abilityVal.append(ability['ability']['name'])
                         continue
                     checking=False
-                    cur.execute("Select AbilityName from Ability")
+                    cur.execute("Select AbilityName from Ability") #appends abilities to dictionary values that have been added already to the database
                     for row in cur:
                         if row[0]==ability['ability']['name']:
                             abilityVal.append(ability['ability']['name'])
@@ -126,12 +124,12 @@ class Pokemon:
                             break
                     if checking:
                         continue
-                    if iter < 1:
+                    if iter < 1: #appends new abilities to list
                         abilityVal.append(ability['ability']['name'])
                         abilityList.append(ability['ability']['name'])
                         returnedPokemonAbilityDiction[pokemon]=abilityVal
                         iter+=1
-                    else:
+                    else: #each pokemon adds 1 new ability to the dictionary at the max, not including previously existing abilities. That way we can only have 25 abilities added at the max to the moves table per run.
                         break
         return returnedPokemonAbilityDiction
 
@@ -179,7 +177,7 @@ class Pokemon:
         returnedMNAPDiction={}
         for moveList in pokemonMoves:
             for move in moveList:
-                if move not in returnedMNAPDiction:
+                if move not in returnedMNAPDiction: #Creating url for pokemon moves with more than 1 word
                     movement= move.split('-')
                     mod=[]
                     for mov in movement:
@@ -188,7 +186,7 @@ class Pokemon:
                     mod='_'.join(mod)
                     url= 'https://bulbapedia.bulbagarden.net/wiki/' + mod + "_(move)"
                     r= requests.get(url)
-                    if r.ok:
+                    if r.ok: #Searching for data on power, accuracy, and pokemon type from bulbapedia website
                         soup= BeautifulSoup(r.content, 'html.parser')
                         tags= soup.find_all('td')
                         typer= soup.find_all('b')
@@ -210,48 +208,49 @@ class Pokemon:
         return returnedMNAPDiction
 
 
-    #inserts data into type table using dictionary returned from getPokemonNameTypes (pogoAPI) and getMoveInfo (bulbapedia)
+    #requires pokemonDiction returned from getPokemonNameTypes (pogoAPI), pokemonMNAPDiction returned from getMoveInfo (bulbapedia), and connection to database (cur, conn)
+    #inserts data into type table
     def insertTypeData(self,cur,conn, pokemonDiction, pokemonMNAPDiction):
         listing=[]
-        for pokemon in pokemonDiction:
-            if pokemonDiction[pokemon] not in listing:
+        for pokemon in pokemonDiction: #adds all pokemon types
+            if pokemonDiction[pokemon] not in listing: 
                 listing.append(pokemonDiction[pokemon])
-        for move in pokemonMNAPDiction:
+        for move in pokemonMNAPDiction: #adds all pokemon move types
             if pokemonMNAPDiction[move]["type"] not in listing:
                 listing.append(pokemonMNAPDiction[move]["type"])
-        for type in listing:
+        for type in listing: #inserts data into Type Table
             cur.execute("INSERT OR IGNORE INTO Type (TypeName) VALUES (?)",(type,))
         conn.commit()
 
-    #inserts data into moves table using dictionary returned from getMoveInfo (bulbapedia requirement), as well as Types Table for foreign key
+    #requires pokemonMNAPDiction returned from getMoveInfo (bulbapedia requirement), connection to database (cur, conn)
+    #inserts data into moves table using Types Table for foreign key
     def insertMoveData(self,cur,conn,pokemonMNAPDiction):
         for moveName, moveVals in pokemonMNAPDiction.items():
             name=moveName
             power=int(pokemonMNAPDiction[moveName]["power"])
             type= pokemonMNAPDiction[moveName]["type"]
-            accuracy=(float(pokemonMNAPDiction[moveName]["accuracy"]))/100
-            strength= float(power * accuracy)
+            accuracy=(float(pokemonMNAPDiction[moveName]["accuracy"]))/100 #changing accuracy from whole number to decimal
+            strength= float(power * accuracy) #calculating strength from power and accuracy
             cur.execute("Select * from Type")
             for row in cur:
                 if row[1]==type:
-                    cur.execute("INSERT OR IGNORE INTO Moves (TypeID,MoveName,Accuracy,Power,OverallStrength) VALUES (?,?,?,?,?)",(int(row[0]),name,accuracy,power,strength))
+                    cur.execute("INSERT OR IGNORE INTO Moves (TypeID,MoveName,Accuracy,Power,OverallStrength) VALUES (?,?,?,?,?)",(int(row[0]),name,accuracy,power,strength)) #inserting data into Type
                     break
         conn.commit()
 
-    #inserts data into ability table using dictionary returned from getPokemonAbilities (pokeAPI requirement)
+    #requires dictionary returned from getPokemonAbilities (pokeAPI requirement), dictionary returned from getAbilityCount (pokeAPI Requirement), and connection to database (cur,conn)
+    #inserts data into ability table
     def insertAbilityData(self,cur,conn,pokemonAbilityDiction,abilityCountDiction):
         for abilityList in pokemonAbilityDiction.values():
             for ability in abilityList:
-                cur.execute("INSERT OR IGNORE INTO Ability (AbilityName,Count) VALUES (?,?)",(ability,abilityCountDiction[ability]))
+                cur.execute("INSERT OR IGNORE INTO Ability (AbilityName,Count) VALUES (?,?)",(ability,abilityCountDiction[ability])) #inserting into ability table with count of moves
         conn.commit()
 
-    #Inserts data into pokemon table using dictionary returned from getPokemonNameTypes (pogoAPI requirement), getPokemonMoves (pokeAPI), and getPokemonAbilities (pokeAPI)
-    #Also uses Type, Moves, and Ability table for foreign keys
-    # cur.execute("CREATE TABLE IF NOT EXISTS Pokemon (PokemonID INTEGER PRIMARY KEY, TypeID INTEGER, AbilityIDs LIST, MoveIDs LIST, PokemonName STRING UNIQUE")
-    
+    #Requires dictionaries returned from getPokemonNameTypes (pogoAPI requirement), getPokemonMoves (pokeAPI), getPokemonAbilities (pokeAPI), as well as connection to database (cur,conn)
+    #Inserts data into pokemon table using Type, Moves, and Ability table for foreign keys    
     def insertPokemonData(self,cur,conn,pokemonDiction, pokemonMoveDiction, pokemonAbilityDiction):
         for pokemonName,pokemonVals in pokemonDiction.items():
-            try:
+            try: #coding in try catch block in case of errors. If coding fails, moves on to next pokemon.
                 name=pokemonName
                 type=pokemonVals
                 typeID=0
@@ -261,31 +260,31 @@ class Pokemon:
                 abilityIDs=[]
                 total_moves_str = []
                 for move in moveNames:
-                    cur.execute("Select * from Moves")
+                    cur.execute("Select * from Moves") #assigning foreign move ids for each pokemon
                     for row in cur:
                         if row[2]== move:
                             moveIDs.append(str(row[0]))
                             total_moves_str.append(row[5])
                             break
                 for ability in abilityNames:
-                    cur.execute("Select * from Ability")
+                    cur.execute("Select * from Ability") #assigning foreign ability ids for each pokemon
                     for row in cur:
                         if row[1]== ability:
                             abilityIDs.append(str(row[0]))
                             break
-                cur.execute("Select * from Type")
+                cur.execute("Select * from Type") #assigning foreign type ids for each pokemon
                 for row in cur:
                     if row[1]==type:
                         typeID= int(row[0])
                         break
-                pokemonOverallStr = round(sum(total_moves_str)/len(total_moves_str),2)
+                pokemonOverallStr = round(sum(total_moves_str)/len(total_moves_str),2) #calculating pokemons overall strength from individual move strength
                 moveIDs=','.join(moveIDs)
                 abilityIDs=','.join(abilityIDs)
                 if len(moveIDs)==0:
                     continue
-                cur.execute("INSERT OR IGNORE INTO Pokemon (TypeID,AbilityIDs,MoveIDs,PokemonName,OverallStrength) VALUES (?,?,?,?,?)",(typeID,abilityIDs,moveIDs,name,pokemonOverallStr))
+                cur.execute("INSERT OR IGNORE INTO Pokemon (TypeID,AbilityIDs,MoveIDs,PokemonName,OverallStrength) VALUES (?,?,?,?,?)",(typeID,abilityIDs,moveIDs,name,pokemonOverallStr)) #insers data into Pokemon table
             except:
-                continue
+                continue #moves on to next pokemon in case of errors
         conn.commit()
 
     # add documentation - mention how this is the "Process the data" section
@@ -597,7 +596,7 @@ class Pokemon:
 
         plt.show()
 
-# add documentation 
+    # add documentation 
     def pokemonTypeStrVisualization1(self, cur, conn):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
@@ -670,7 +669,7 @@ class Pokemon:
         plt.show()
     
 
-# add documentation
+    # add documentation
     def pokemonTypeStrVisualization2(self, cur, conn):
         cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
         type_pokestr_lst = cur.fetchall()
@@ -758,7 +757,7 @@ class Pokemon:
 
         plt.show()
     
-
+    # add documentation
     def AbilityCommonalityVisualization(self, cur, conn):
         cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
         ability_lst = cur.fetchall()
