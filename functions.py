@@ -308,9 +308,10 @@ class Pokemon:
     # - the least common ability
     # does so by averaging the calculated strengths by how length, and by counting type and ability occurrences
     def calculationsFile(self, cur, con):
-        cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+        # selects some data from all of the tables
+        cur.execute("SELECT Pokemon.OverallStrength, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID") # use of join
         type_pokestr_lst = cur.fetchall()
-        cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
+        cur.execute("SELECT Moves.OverallStrength, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID") # use of join
         type_movestr_lst = cur.fetchall()
         cur.execute("SELECT AbilityIDs, OverallStrength FROM Pokemon")
         ability_lst = cur.fetchall()
@@ -318,9 +319,9 @@ class Pokemon:
         ability_names = cur.fetchall()
         cur.execute("SELECT Count, AbilityName FROM Ability")
         ability_count = cur.fetchall()
-        cur.execute("SELECT Moves.TypeID, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID")
+        cur.execute("SELECT Moves.TypeID, Type.TypeName FROM Moves JOIN Type ON Moves.TypeID = Type.TypeID") # use of join 
         type_move_count = cur.fetchall()
-        cur.execute("SELECT Pokemon.TypeID, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID")
+        cur.execute("SELECT Pokemon.TypeID, Type.TypeName FROM Pokemon JOIN Type ON Pokemon.TypeID = Type.TypeID") # use of join
         type_poke_count = cur.fetchall()
 
         # iterating through each list to create a dictionary for each SELECT
@@ -392,7 +393,7 @@ class Pokemon:
         least_common_ability = sorted(ability_count)[0][1]
 
         # create the calculations file
-        f = open("poke_calculations.txt", "w")
+        f = open("poke_calculations.txt", "w") # write out into file
         f.write("POKEMON TYPE:" + "\n")
         f.write("- Strongest Pokemon Type: " + strongest_pokemon_type + " (" + str(poke_combined_dict[strongest_pokemon_type]) + " Overall Strength)" + "\n")
         f.write("- Weakest Pokemon Type: " + weakest_pokemon_type  + " (" + str(poke_combined_dict[weakest_pokemon_type]) + " Overall Strength)" + "\n")
