@@ -1,0 +1,17 @@
+POKEMON TYPE:
+- Strongest Pokemon Type: Fairy (93.0 Overall Strength)
+- Weakest Pokemon Type: Poison (57.43 Overall Strength)
+- Most Common Poke Type: Normal (Occurred 17 Times)
+- Least Common Poke Type: Fairy (Occurred 1 Times)
+--------------------------------------------------------
+MOVE TYPE:
+- Strongest Move Type: Ground (90.0 Overall Strength)
+- Weakest Move Type: Ghost (46.67 Overall Strength)
+- Most Common Move Type: Normal (Occurred 42 Times)
+- Least Common Move Type: Ground (Occurred 2 Times)
+--------------------------------------------------------
+ABILITIES:
+- Strongest Ability: Ice-body (95.94 Overall Strength)
+- Weakest Ability: Marvel-scale (12.75 Overall Strength)
+- Most Common Ability: Swift-swim (Occurred 46 Times)
+- Least Common Ability: Air-lock (Occurred 1 Times)

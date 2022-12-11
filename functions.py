@@ -12,6 +12,7 @@ import numpy as np
 #Reports and visualizations are found under the Report folder
 #Obtained data about Pokemon and their moves, abilities, and types
 #Utilized 2 APIs (PokeAPI, Pokemon Go API) and 1 website (bulbapedia), limited to 25 with each run adding additional data
+# https://github.com/avery-feldman/206project
 
 class Pokemon:
 
